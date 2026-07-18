@@ -5,16 +5,17 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
+import jakarta.validation.constraints.Positive;
 public class AddIncomeRequest {
 
-    @NotBlank
+    @NotBlank(message = "Income source is required")
     private String source;
 
-    @NotNull
+    @NotNull(message = "Income amount is required")
+    @Positive(message = "Income amount must be greater than zero")
     private BigDecimal amount;
 
-    @NotNull
+    @NotNull(message = "Income date is required")
     private LocalDate incomeDate;
 
     public String getSource() {

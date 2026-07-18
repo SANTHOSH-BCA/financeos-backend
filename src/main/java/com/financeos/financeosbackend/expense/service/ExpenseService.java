@@ -17,15 +17,28 @@ import java.util.Optional;
 import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.financeos.financeosbackend.expense.specification.ExpenseSpecification;
+import org.springframework.data.jpa.domain.Specification;
+import com.financeos.financeosbackend.expense.dto.ExpenseFilterRequest;
+import java.time.LocalDate;
+
 @Service
 public class ExpenseService {
 
-    @Autowired
-    private ExpenseRepository expenseRepository;
-    @Autowired
-    private UserRepository userRepository;
+    private final ExpenseRepository expenseRepository;
+    private final UserRepository userRepository;
+    public ExpenseService(ExpenseRepository expenseRepository,
+                          UserRepository userRepository) {
+
+        this.expenseRepository = expenseRepository;
+        this.userRepository = userRepository;
+    }
 
     public ExpenseResponse addExpense(AddExpenseRequest request) {
+
+        if (request.getExpenseDate().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Expense date cannot be in the future");
+        }
 
         Expense expense = new Expense();
 
@@ -38,7 +51,9 @@ public class ExpenseService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
         expense.setUser(user);
 
@@ -75,8 +90,9 @@ public class ExpenseService {
                 SecurityContextHolder.getContext().getAuthentication();
 
         String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
         Optional<Expense> optionalExpense =
                 expenseRepository.findByIdAndUser(id, user);
@@ -112,7 +128,9 @@ public class ExpenseService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
         Optional<Expense> optionalExpense =
                 expenseRepository.findByIdAndUser(id, user);
@@ -127,6 +145,30 @@ public class ExpenseService {
 
     }
 
+    public Page<ExpenseResponse> filterExpenses(ExpenseFilterRequest request,
+                                                Pageable pageable) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        String email = authentication.getName();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Specification<Expense> specification =
+                ExpenseSpecification.hasCategory(request.getCategory())
+                        .and(ExpenseSpecification.hasMinAmount(request.getMinAmount()))
+                        .and(ExpenseSpecification.hasMaxAmount(request.getMaxAmount()))
+                        .and(ExpenseSpecification.hasStartDate(request.getStartDate()))
+                        .and(ExpenseSpecification.hasEndDate(request.getEndDate()))
+                        .and((root, query, criteriaBuilder) ->
+                                criteriaBuilder.equal(root.get("user"), user));
+
+        return expenseRepository.findAll(specification, pageable)
+                .map(this::mapToResponse);
+    }
+
     private ExpenseResponse mapToResponse(Expense expense) {
 
         ExpenseResponse response = new ExpenseResponse();
@@ -139,5 +181,7 @@ public class ExpenseService {
 
         return response;
     }
+
+
 
 }

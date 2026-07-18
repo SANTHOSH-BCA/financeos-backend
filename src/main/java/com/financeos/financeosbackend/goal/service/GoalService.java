@@ -14,7 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import java.time.LocalDate;
 @Service
 public class GoalService {
 
@@ -28,6 +28,10 @@ public class GoalService {
     }
 
     public GoalResponse addGoal(AddGoalRequest request) {
+
+        if (request.getTargetDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Target date cannot be in the past");
+        }
 
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -57,7 +61,8 @@ public class GoalService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return goalRepository.findByUser(user, pageable)
                 .map(this::mapToResponse);

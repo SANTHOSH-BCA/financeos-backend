@@ -15,17 +15,30 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.financeos.financeosbackend.exception.ResourceNotFoundException;
+import java.time.LocalDate;
+
+
+
 
 @Service
 public class IncomeService {
 
-    @Autowired
-    private IncomeRepository incomeRepository;
+    private final IncomeRepository incomeRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    public IncomeService(IncomeRepository incomeRepository,
+                         UserRepository userRepository) {
+
+        this.incomeRepository = incomeRepository;
+        this.userRepository = userRepository;
+    }
 
     public IncomeResponse addIncome(AddIncomeRequest request) {
+
+        if (request.getIncomeDate().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Income date cannot be in the future");
+        }
 
         Income income = new Income();
 
@@ -38,7 +51,8 @@ public class IncomeService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         income.setUser(user);
 
@@ -62,7 +76,8 @@ public class IncomeService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return incomeRepository.findByUser(user, pageable)
                 .map(this::mapToResponse);
@@ -75,7 +90,8 @@ public class IncomeService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Optional<Income> optionalIncome =
                 incomeRepository.findByIdAndUser(id, user);
@@ -110,7 +126,8 @@ public class IncomeService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Optional<Income> optionalIncome =
                 incomeRepository.findByIdAndUser(id, user);

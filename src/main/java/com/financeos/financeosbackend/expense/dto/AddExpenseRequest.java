@@ -2,6 +2,7 @@ package com.financeos.financeosbackend.expense.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,16 +17,17 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class AddExpenseRequest {
 
-    @NotBlank
+    @NotBlank(message = "Expense title is required")
     private String title;
 
-    @NotNull
+    @NotNull(message = "Expense amount is required")
+    @Positive(message = "Expense amount must be greater than zero")
     private BigDecimal amount;
 
-    @NotBlank
+    @NotBlank(message = "Expense category is required")
     private String category;
 
-    @NotNull
+    @NotNull(message = "Expense date is required")
     private LocalDate expenseDate;
 
 }

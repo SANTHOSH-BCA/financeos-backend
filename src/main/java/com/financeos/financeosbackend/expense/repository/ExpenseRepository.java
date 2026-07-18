@@ -10,8 +10,8 @@ import org.springframework.data.repository.query.Param;
 import com.financeos.financeosbackend.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpecificationExecutor<Expense> {
     Page<Expense> findByUser(User user, Pageable pageable);
     java.util.Optional<Expense> findByIdAndUser(Long id, User user);
 

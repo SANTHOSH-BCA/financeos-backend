@@ -8,10 +8,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.financeos.financeosbackend.expense.dto.ExpenseFilterRequest;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import org.springframework.http.ResponseEntity;
+import com.financeos.financeosbackend.common.dto.PagedResponse;
 
 
 @RestController
-@RequestMapping("/api/expenses")
+@RequestMapping("/api/v1/expenses")
 public class ExpenseController {
 
     private final ExpenseService expenseService;
@@ -26,33 +31,67 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public ExpenseResponse addExpense(@Valid @RequestBody AddExpenseRequest request) {
+    public ResponseEntity<ApiResponse<ExpenseResponse>> addExpense(
+            @Valid @RequestBody AddExpenseRequest request) {
 
-        return expenseService.addExpense(request);
+        ExpenseResponse response = expenseService.addExpense(request);
 
+        return ResponseBuilder.created(
+                "Expense created successfully",
+                response
+        );
     }
 
     @GetMapping
-    public Page<ExpenseResponse> getMyExpenses(Pageable pageable) {
+    public ResponseEntity<PagedResponse<ExpenseResponse>> getMyExpenses(
+            Pageable pageable) {
 
-        return expenseService.getMyExpenses(pageable);
+        Page<ExpenseResponse> response =
+                expenseService.getMyExpenses(pageable);
 
+        return ResponseBuilder.paged(
+                "Expenses fetched successfully",
+                response
+        );
     }
 
     @PutMapping("/{id}")
-    public ExpenseResponse updateExpense(
+    public ResponseEntity<ApiResponse<ExpenseResponse>> updateExpense(
             @PathVariable Long id,
             @Valid @RequestBody AddExpenseRequest request) {
 
-        return expenseService.updateExpense(id, request);
+        ExpenseResponse response = expenseService.updateExpense(id, request);
 
+        return ResponseBuilder.success(
+                "Expense updated successfully",
+                response
+        );
     }
 
     @DeleteMapping("/{id}")
-    public String deleteExpense(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteExpense(
+            @PathVariable Long id) {
 
-        return expenseService.deleteExpense(id);
+        String response = expenseService.deleteExpense(id);
 
+        return ResponseBuilder.success(
+                "Expense deleted successfully",
+                response
+        );
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<PagedResponse<ExpenseResponse>> filterExpenses(
+            ExpenseFilterRequest request,
+            Pageable pageable) {
+
+        Page<ExpenseResponse> response =
+                expenseService.filterExpenses(request, pageable);
+
+        return ResponseBuilder.paged(
+                "Expenses filtered successfully",
+                response
+        );
     }
 
 }

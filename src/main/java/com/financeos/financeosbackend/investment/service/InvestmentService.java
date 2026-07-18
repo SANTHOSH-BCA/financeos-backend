@@ -14,7 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import java.time.LocalDate;
 @Service
 public class InvestmentService {
 
@@ -28,6 +28,10 @@ public class InvestmentService {
     }
 
     public InvestmentResponse addInvestment(AddInvestmentRequest request) {
+
+        if (request.getInvestmentDate().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Investment date cannot be in the future");
+        }
 
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
@@ -56,7 +60,8 @@ public class InvestmentService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return investmentRepository.findByUser(user, pageable)
                 .map(this::mapToResponse);

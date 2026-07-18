@@ -8,7 +8,7 @@ import com.financeos.financeosbackend.user.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
+import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 
 @Service
@@ -34,7 +34,8 @@ public class DashboardService {
 
         String email = authentication.getName();
 
-        User user = userRepository.findByEmail(email).get();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         BigDecimal totalIncome =
                 incomeRepository.getTotalIncomeByUser(user);
