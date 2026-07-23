@@ -7,8 +7,7 @@ import com.financeos.financeosbackend.expense.repository.ExpenseRepository;
 import com.financeos.financeosbackend.user.repository.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.financeos.financeosbackend.common.service.CurrentUserService;
 import org.springframework.stereotype.Service;
 import com.financeos.financeosbackend.user.entity.User;
 import java.util.ArrayList;
@@ -21,17 +20,25 @@ import com.financeos.financeosbackend.expense.specification.ExpenseSpecification
 import org.springframework.data.jpa.domain.Specification;
 import com.financeos.financeosbackend.expense.dto.ExpenseFilterRequest;
 import java.time.LocalDate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ExpenseService {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(ExpenseService.class);
+
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
     public ExpenseService(ExpenseRepository expenseRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          CurrentUserService currentUserService) {
 
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     public ExpenseResponse addExpense(AddExpenseRequest request) {
@@ -46,18 +53,17 @@ public class ExpenseService {
         expense.setAmount(request.getAmount());
         expense.setCategory(request.getCategory());
         expense.setExpenseDate(request.getExpenseDate());
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+        User user = currentUserService.getCurrentUser();
 
         expense.setUser(user);
 
+// Before saving
+        logger.info("Creating expense '{}' for user: {}", request.getTitle(), user.getEmail());
+
         Expense savedExpense = expenseRepository.save(expense);
+
+// After successful save
+        logger.info("Expense created successfully with ID: {}", savedExpense.getId());
 
         ExpenseResponse response = new ExpenseResponse();
 
@@ -72,13 +78,7 @@ public class ExpenseService {
 
     public Page<ExpenseResponse> getMyExpenses(Pageable pageable) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = currentUserService.getCurrentUser();
 
         return expenseRepository.findByUser(user, pageable)
                 .map(this::mapToResponse);
@@ -86,19 +86,15 @@ public class ExpenseService {
 
     public ExpenseResponse updateExpense(Long id, AddExpenseRequest request) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = currentUserService.getCurrentUser();
 
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+        logger.info("Updating expense with ID: {} for user: {}", id, user.getEmail());
 
         Optional<Expense> optionalExpense =
                 expenseRepository.findByIdAndUser(id, user);
 
         if (optionalExpense.isEmpty()) {
-            throw new RuntimeException("Expense not found");
+            throw new ResourceNotFoundException("Expense not found");
         }
 
         Expense expense = optionalExpense.get();
@@ -109,6 +105,8 @@ public class ExpenseService {
         expense.setExpenseDate(request.getExpenseDate());
 
         Expense updatedExpense = expenseRepository.save(expense);
+
+        logger.info("Expense updated successfully with ID: {}", updatedExpense.getId());
 
         ExpenseResponse response = new ExpenseResponse();
 
@@ -121,40 +119,30 @@ public class ExpenseService {
         return response;
     }
 
-    public String deleteExpense(Long id) {
+    public void deleteExpense(Long id) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = currentUserService.getCurrentUser();
 
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+        logger.info("Deleting expense with ID: {} for user: {}", id, user.getEmail());
 
         Optional<Expense> optionalExpense =
                 expenseRepository.findByIdAndUser(id, user);
 
         if (optionalExpense.isEmpty()) {
-            throw new RuntimeException("Expense not found");
+            throw new ResourceNotFoundException("Expense not found");
         }
 
         expenseRepository.delete(optionalExpense.get());
 
-        return "Expense Deleted Successfully";
+        logger.info("Expense deleted successfully with ID: {}", id);
+
 
     }
 
     public Page<ExpenseResponse> filterExpenses(ExpenseFilterRequest request,
                                                 Pageable pageable) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = currentUserService.getCurrentUser();
 
         Specification<Expense> specification =
                 ExpenseSpecification.hasCategory(request.getCategory())

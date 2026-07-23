@@ -10,6 +10,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import com.financeos.financeosbackend.common.dto.PagedResponse;
+import org.springframework.http.ResponseEntity;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import org.springframework.http.ResponseEntity;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
 @RestController
 @RequestMapping("/api/investments")
 public class InvestmentController {
@@ -26,29 +40,56 @@ public class InvestmentController {
     }
 
     @PostMapping
-    public InvestmentResponse addInvestment(@Valid @RequestBody AddInvestmentRequest request) {
-        return investmentService.addInvestment(request);
+    public ResponseEntity<ApiResponse<InvestmentResponse>> addInvestment(
+            @Valid @RequestBody AddInvestmentRequest request) {
+
+        System.out.println(">>> NEW InvestmentController is running <<<");
+
+        InvestmentResponse response = investmentService.addInvestment(request);
+
+        return ResponseBuilder.created(
+                "Investment created successfully",
+                response
+        );
     }
 
     @GetMapping
-    public Page<InvestmentResponse> getMyInvestments(Pageable pageable) {
+    public ResponseEntity<PagedResponse<InvestmentResponse>> getMyInvestments(
+            Pageable pageable) {
 
-        return investmentService.getMyInvestments(pageable);
+        Page<InvestmentResponse> response =
+                investmentService.getMyInvestments(pageable);
 
+        return ResponseBuilder.paged(
+                "Investments retrieved successfully",
+                response
+        );
     }
 
     @PutMapping("/{id}")
-    public InvestmentResponse updateInvestment(@PathVariable Long id,
-                                               @Valid @RequestBody AddInvestmentRequest request) {
+    public ResponseEntity<ApiResponse<InvestmentResponse>> updateInvestment(
+            @PathVariable Long id,
+            @Valid @RequestBody AddInvestmentRequest request) {
 
-        return investmentService.updateInvestment(id, request);
+        InvestmentResponse response =
+                investmentService.updateInvestment(id, request);
+
+        return ResponseBuilder.success(
+                "Investment updated successfully",
+                response
+        );
     }
 
     @DeleteMapping("/{id}")
-    public void deleteInvestment(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteInvestment(
+            @PathVariable Long id) {
 
         investmentService.deleteInvestment(id);
 
+        return ResponseBuilder.success(
+                "Investment deleted successfully",
+                null
+        );
     }
 
 }

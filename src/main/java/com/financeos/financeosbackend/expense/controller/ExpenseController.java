@@ -69,14 +69,14 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<String>> deleteExpense(
+    public ResponseEntity<ApiResponse<Void>> deleteExpense(
             @PathVariable Long id) {
 
-        String response = expenseService.deleteExpense(id);
+        expenseService.deleteExpense(id);
 
         return ResponseBuilder.success(
                 "Expense deleted successfully",
-                response
+                null
         );
     }
 

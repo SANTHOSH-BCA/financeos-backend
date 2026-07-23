@@ -1,0 +1,30 @@
+services:
+  financeos-mysql:
+    image: mysql:8.4
+    container_name: financeos-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_ROOT_PASSWORD: Santhosh@2904
+      MYSQL_DATABASE: financeos
+
+    ports:
+      - "3307:3306"
+
+    volumes:
+      - financeos_mysql_data:/var/lib/mysql
+
+  financeos-backend:
+    build: .
+    container_name: financeos-backend
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      - financeos-mysql
+
+    restart: unless-stopped
+
+volumes:
+  financeos_mysql_data:

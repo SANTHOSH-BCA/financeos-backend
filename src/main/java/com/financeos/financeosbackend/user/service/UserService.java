@@ -1,5 +1,5 @@
 package com.financeos.financeosbackend.user.service;
-
+import com.financeos.financeosbackend.exception.InvalidCredentialsException;
 import com.financeos.financeosbackend.user.dto.RegisterUserRequest;
 import com.financeos.financeosbackend.security.JwtService;
 import com.financeos.financeosbackend.user.entity.User;
@@ -11,9 +11,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.financeos.financeosbackend.user.dto.UserResponse;
 import com.financeos.financeosbackend.user.dto.LoginRequest;
 import com.financeos.financeosbackend.user.dto.LoginResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class UserService {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(UserService.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -37,6 +42,8 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
+        logger.info("User registered successfully: {}", savedUser.getEmail());
+
         UserResponse response = new UserResponse();
 
         response.setId(savedUser.getId());
@@ -52,14 +59,19 @@ public class UserService {
     public LoginResponse loginUser(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+                .orElseThrow(() -> {
+                    logger.warn("Login failed. Email not found: {}", request.getEmail());
+                    return new InvalidCredentialsException("Invalid email or password");
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+            logger.warn("Login failed. Invalid password for email: {}", request.getEmail());
+            throw new InvalidCredentialsException("Invalid email or password");
         }
 
         String token = jwtService.generateToken(user.getEmail());
+
+        logger.info("User logged in successfully: {}", user.getEmail());
 
         return new LoginResponse(
                 token,

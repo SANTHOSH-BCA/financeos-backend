@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/goals")
@@ -23,10 +26,16 @@ public class GoalController {
     public String test() {
         return "Goal Controller Working";
     }
-
     @PostMapping
-    public GoalResponse addGoal(@Valid @RequestBody AddGoalRequest request) {
-        return goalService.addGoal(request);
+    public ResponseEntity<ApiResponse<GoalResponse>> addGoal(
+            @Valid @RequestBody AddGoalRequest request) {
+
+        GoalResponse response = goalService.addGoal(request);
+
+        return ResponseBuilder.created(
+                "Goal created successfully",
+                response
+        );
     }
 
     @GetMapping
@@ -44,9 +53,14 @@ public class GoalController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteGoal(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteGoal(
+            @PathVariable Long id) {
 
         goalService.deleteGoal(id);
 
+        return ResponseBuilder.success(
+                "Goal deleted successfully",
+                null
+        );
     }
 }

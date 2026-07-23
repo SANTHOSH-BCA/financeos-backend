@@ -8,8 +8,7 @@ import com.financeos.financeosbackend.income.dto.AddIncomeRequest;
 import com.financeos.financeosbackend.income.dto.IncomeResponse;
 import com.financeos.financeosbackend.income.entity.Income;
 import com.financeos.financeosbackend.user.entity.User;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,24 +16,34 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import java.time.LocalDate;
-
+import com.financeos.financeosbackend.common.service.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 
 @Service
 public class IncomeService {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(IncomeService.class);
+
     private final IncomeRepository incomeRepository;
     private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public IncomeService(IncomeRepository incomeRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository,
+                         CurrentUserService currentUserService) {
 
         this.incomeRepository = incomeRepository;
         this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     public IncomeResponse addIncome(AddIncomeRequest request) {
+
+        logger.info("Creating income for source: {}", request.getSource());
 
         if (request.getIncomeDate().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("Income date cannot be in the future");
@@ -46,17 +55,13 @@ public class IncomeService {
         income.setAmount(request.getAmount());
         income.setIncomeDate(request.getIncomeDate());
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = currentUserService.getCurrentUser();
 
         income.setUser(user);
 
         Income savedIncome = incomeRepository.save(income);
+
+        logger.info("Income created successfully with ID: {}", savedIncome.getId());
 
         IncomeResponse response = new IncomeResponse();
 
@@ -71,13 +76,14 @@ public class IncomeService {
 
     public Page<IncomeResponse> getMyIncome(Pageable pageable) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = currentUserService.getCurrentUser();
 
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        logger.info(
+                "Fetching incomes for user: {} | Page: {} | Size: {}",
+                user.getEmail(),
+                pageable.getPageNumber(),
+                pageable.getPageSize()
+        );
 
         return incomeRepository.findByUser(user, pageable)
                 .map(this::mapToResponse);
@@ -85,19 +91,15 @@ public class IncomeService {
 
     public IncomeResponse updateIncome(Long id, AddIncomeRequest request) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = currentUserService.getCurrentUser();
 
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        logger.info("Updating income with ID: {} for user: {}", id, user.getEmail());
 
         Optional<Income> optionalIncome =
                 incomeRepository.findByIdAndUser(id, user);
 
         if (optionalIncome.isEmpty()) {
-            throw new RuntimeException("Income not found");
+            throw new ResourceNotFoundException("Income not found");
         }
 
         Income income = optionalIncome.get();
@@ -107,6 +109,8 @@ public class IncomeService {
         income.setIncomeDate(request.getIncomeDate());
 
         Income updatedIncome = incomeRepository.save(income);
+
+        logger.info("Income updated successfully with ID: {}", updatedIncome.getId());
 
         IncomeResponse response = new IncomeResponse();
 
@@ -119,26 +123,18 @@ public class IncomeService {
 
     }
 
-    public String deleteIncome(Long id) {
+    public void deleteIncome(Long id) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String email = authentication.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = currentUserService.getCurrentUser();
 
         Optional<Income> optionalIncome =
                 incomeRepository.findByIdAndUser(id, user);
 
         if (optionalIncome.isEmpty()) {
-            throw new RuntimeException("Income not found");
+            throw new ResourceNotFoundException("Income not found");
         }
 
         incomeRepository.delete(optionalIncome.get());
-
-        return "Income Deleted Successfully";
 
     }
 

@@ -5,37 +5,56 @@ import com.financeos.financeosbackend.expense.repository.ExpenseRepository;
 import com.financeos.financeosbackend.income.repository.IncomeRepository;
 import com.financeos.financeosbackend.user.entity.User;
 import com.financeos.financeosbackend.user.repository.UserRepository;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.financeos.financeosbackend.goal.repository.GoalRepository;
+import com.financeos.financeosbackend.investment.repository.InvestmentRepository;
 import org.springframework.stereotype.Service;
 import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
-
+import com.financeos.financeosbackend.common.service.CurrentUserService;
 @Service
 public class DashboardService {
 
     private final ExpenseRepository expenseRepository;
     private final IncomeRepository incomeRepository;
     private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
+    private final InvestmentRepository investmentRepository;
+    private final GoalRepository goalRepository;
 
-    public DashboardService(ExpenseRepository expenseRepository,
-                            IncomeRepository incomeRepository,
-                            UserRepository userRepository) {
+    public DashboardService(
+            ExpenseRepository expenseRepository,
+            IncomeRepository incomeRepository,
+            UserRepository userRepository,
+            CurrentUserService currentUserService,
+            InvestmentRepository investmentRepository,
+            GoalRepository goalRepository) {
 
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
         this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
+        this.investmentRepository = investmentRepository;
+        this.goalRepository = goalRepository;
     }
 
     public DashboardResponse getDashboard() {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = currentUserService.getCurrentUser();
 
-        String email = authentication.getName();
+        BigDecimal totalInvestments =
+                investmentRepository.getTotalInvestmentByUser(user);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Long goalCount =
+                goalRepository.countGoalsByUser(user);
+
+        Long expenseCount =
+                expenseRepository.countExpensesByUser(user);
+
+        Long incomeCount =
+                incomeRepository.countIncomeByUser(user);
+
+        Long investmentCount =
+                investmentRepository.countInvestmentsByUser(user);
 
         BigDecimal totalIncome =
                 incomeRepository.getTotalIncomeByUser(user);
@@ -56,6 +75,11 @@ public class DashboardService {
         response.setTotalExpense(totalExpense);
         response.setNetSavings(netSavings);
         response.setTotalTransactions(totalTransactions);
+        response.setTotalInvestments(totalInvestments);
+        response.setGoalCount(goalCount);
+        response.setExpenseCount(expenseCount);
+        response.setIncomeCount(incomeCount);
+        response.setInvestmentCount(investmentCount);
 
         return response;
     }

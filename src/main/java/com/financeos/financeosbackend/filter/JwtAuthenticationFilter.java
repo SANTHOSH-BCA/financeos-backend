@@ -11,8 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.IOException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     @Autowired
     private JwtService jwtService;
 
@@ -22,8 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
-        System.out.println("Method: " + request.getMethod());
-        System.out.println("URI: " + request.getRequestURI());
+
 
         String authHeader = request.getHeader("Authorization");
 
@@ -48,9 +52,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            System.out.println("Authenticated User: " + email);
-
+        }else {
+            logger.warn("Invalid JWT token received");
         }
 
         filterChain.doFilter(request, response);

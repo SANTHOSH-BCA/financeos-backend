@@ -5,7 +5,9 @@ import com.financeos.financeosbackend.dashboard.service.DashboardService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
-
+import org.springframework.http.ResponseEntity;
+import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
@@ -15,9 +17,14 @@ public class DashboardController {
     public DashboardController(DashboardService dashboardService) {
         this.dashboardService = dashboardService;
     }
-
     @GetMapping
-    public DashboardResponse getDashboard() {
-        return dashboardService.getDashboard();
+    public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard() {
+
+        DashboardResponse response = dashboardService.getDashboard();
+
+        return ResponseBuilder.success(
+                "Dashboard retrieved successfully",
+                response
+        );
     }
 }
