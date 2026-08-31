@@ -36,7 +36,7 @@ import com.financeos.financeosbackend.income.entity.Income;
 import com.financeos.financeosbackend.goal.dto.AddGoalRequest;
 import com.financeos.financeosbackend.goal.entity.Goal;
 import com.financeos.financeosbackend.goal.repository.GoalRepository;
-import com.financeos.financeosbackend.integration.helper.GoalTestHelper;
+import com.financeos.financeosbackend.integration.helper.GoalTestHelper;import com.financeos.financeosbackend.asset.repository.AssetRepository;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -61,6 +61,9 @@ public abstract class BaseIntegrationTest {
 
     @Autowired
     protected InvestmentRepository investmentRepository;
+
+    @Autowired
+    protected AssetRepository assetRepository;
 
     /**
      * Creates a unique email for every integration test.
