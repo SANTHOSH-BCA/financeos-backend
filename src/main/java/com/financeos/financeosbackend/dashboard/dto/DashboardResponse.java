@@ -3,45 +3,6 @@ package com.financeos.financeosbackend.dashboard.dto;
 import java.math.BigDecimal;
 
 public class DashboardResponse {
-    public BigDecimal getTotalInvestments() {
-        return totalInvestments;
-    }
-
-    public void setTotalInvestments(BigDecimal totalInvestments) {
-        this.totalInvestments = totalInvestments;
-    }
-
-    public Long getGoalCount() {
-        return goalCount;
-    }
-
-    public void setGoalCount(Long goalCount) {
-        this.goalCount = goalCount;
-    }
-
-    public Long getExpenseCount() {
-        return expenseCount;
-    }
-
-    public void setExpenseCount(Long expenseCount) {
-        this.expenseCount = expenseCount;
-    }
-
-    public Long getIncomeCount() {
-        return incomeCount;
-    }
-
-    public void setIncomeCount(Long incomeCount) {
-        this.incomeCount = incomeCount;
-    }
-
-    public Long getInvestmentCount() {
-        return investmentCount;
-    }
-
-    public void setInvestmentCount(Long investmentCount) {
-        this.investmentCount = investmentCount;
-    }
 
     private BigDecimal totalIncome;
 
@@ -49,9 +10,11 @@ public class DashboardResponse {
 
     private BigDecimal netSavings;
 
-    private Long totalTransactions;
+    private BigDecimal totalNetWorth;
 
     private BigDecimal totalInvestments;
+
+    private Long totalTransactions;
 
     private Long goalCount;
 
@@ -88,11 +51,59 @@ public class DashboardResponse {
         this.netSavings = netSavings;
     }
 
+    public BigDecimal getTotalNetWorth() {
+        return totalNetWorth;
+    }
+
+    public void setTotalNetWorth(BigDecimal totalNetWorth) {
+        this.totalNetWorth = totalNetWorth;
+    }
+
+    public BigDecimal getTotalInvestments() {
+        return totalInvestments;
+    }
+
+    public void setTotalInvestments(BigDecimal totalInvestments) {
+        this.totalInvestments = totalInvestments;
+    }
+
     public Long getTotalTransactions() {
         return totalTransactions;
     }
 
     public void setTotalTransactions(Long totalTransactions) {
         this.totalTransactions = totalTransactions;
+    }
+
+    public Long getGoalCount() {
+        return goalCount;
+    }
+
+    public void setGoalCount(Long goalCount) {
+        this.goalCount = goalCount;
+    }
+
+    public Long getExpenseCount() {
+        return expenseCount;
+    }
+
+    public void setExpenseCount(Long expenseCount) {
+        this.expenseCount = expenseCount;
+    }
+
+    public Long getIncomeCount() {
+        return incomeCount;
+    }
+
+    public void setIncomeCount(Long incomeCount) {
+        this.incomeCount = incomeCount;
+    }
+
+    public Long getInvestmentCount() {
+        return investmentCount;
+    }
+
+    public void setInvestmentCount(Long investmentCount) {
+        this.investmentCount = investmentCount;
     }
 }

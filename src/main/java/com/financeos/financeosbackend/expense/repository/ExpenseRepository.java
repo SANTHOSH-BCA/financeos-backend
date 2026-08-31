@@ -25,4 +25,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long>, JpaSpec
     @Query("SELECT COUNT(e) FROM Expense e WHERE e.user = :user")
     Long countExpensesByUser(@Param("user") User user);
 
+   
+
 }

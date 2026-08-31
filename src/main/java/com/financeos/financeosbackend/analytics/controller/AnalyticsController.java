@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
+import com.financeos.financeosbackend.analytics.dto.MonthlyCashFlowResponse;
 import com.financeos.financeosbackend.analytics.dto.ExpenseCategoryResponse;
 import com.financeos.financeosbackend.analytics.dto.MonthlySavingsResponse;
 import com.financeos.financeosbackend.analytics.dto.FinancialInsightResponse;
@@ -225,4 +226,16 @@ public class AnalyticsController {
                 response
         );
     }
+
+    @GetMapping("/monthly-cash-flow")
+public ResponseEntity<ApiResponse<List<MonthlyCashFlowResponse>>> getMonthlyCashFlow() {
+
+    List<MonthlyCashFlowResponse> response =
+            analyticsService.getMonthlyCashFlow();
+
+    return ResponseBuilder.success(
+            "Monthly cash flow retrieved successfully",
+            response
+    );
+}
 }

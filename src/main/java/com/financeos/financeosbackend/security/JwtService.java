@@ -37,18 +37,20 @@ public class JwtService {
 
     public boolean isTokenValid(String token) {
 
-        try {
+    try {
 
-            Jwts.parser()
-                    .setSigningKey(SECRET_KEY.getBytes())
-                    .build()
-                    .parseSignedClaims(token);
+        Jwts.parser()
+                .setSigningKey(SECRET_KEY.getBytes())
+                .build()
+                .parseSignedClaims(token);
 
-            return true;
+        return true;
 
-        } catch (Exception e) {
-            return false;
-        }
+    } catch (Exception e) {
 
+        e.printStackTrace();
+
+        return false;
     }
+}
 }

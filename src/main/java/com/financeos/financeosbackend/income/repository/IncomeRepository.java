@@ -25,6 +25,8 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
     @Query("SELECT COUNT(i) FROM Income i WHERE i.user = :user")
     Long countIncomeByUser(@Param("user") User user);
 
+    
+
 
 
 }

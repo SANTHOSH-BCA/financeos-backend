@@ -28,6 +28,7 @@ import com.financeos.financeosbackend.goal.entity.Goal;
 import java.math.RoundingMode;
 import com.financeos.financeosbackend.goal.repository.GoalRepository;
 import com.financeos.financeosbackend.analytics.dto.InvestmentSummaryResponse;
+import com.financeos.financeosbackend.analytics.dto.MonthlyCashFlowResponse;
 import com.financeos.financeosbackend.investment.repository.InvestmentRepository;
 import com.financeos.financeosbackend.analytics.dto.InvestmentSummaryResponse;
 import com.financeos.financeosbackend.analytics.dto.InvestmentDistributionResponse;
@@ -38,7 +39,7 @@ import com.financeos.financeosbackend.analytics.dto.GoalInsightResponse;
 import com.financeos.financeosbackend.analytics.dto.InvestmentInsightResponse;
 import com.financeos.financeosbackend.analytics.dto.SmartRecommendationResponse;
 import com.financeos.financeosbackend.analytics.dto.MonthlyFinancialSummaryResponse;
-
+import com.financeos.financeosbackend.analytics.dto.MonthlyCashFlowResponse;
 
 
 @Service
@@ -835,4 +836,31 @@ public class AnalyticsService {
                         )
                 ));
     }
+
+    public List<MonthlyCashFlowResponse> getMonthlyCashFlow() {
+
+    User user = currentUserService.getCurrentUser();
+
+    Map<YearMonth, BigDecimal> monthlyIncome = getMonthlyIncome(user);
+    Map<YearMonth, BigDecimal> monthlyExpense = getMonthlyExpense(user);
+
+    Set<YearMonth> allMonths = new TreeSet<>();
+    allMonths.addAll(monthlyIncome.keySet());
+    allMonths.addAll(monthlyExpense.keySet());
+
+    List<MonthlyCashFlowResponse> response = new ArrayList<>();
+
+    for (YearMonth month : allMonths) {
+
+        response.add(
+                new MonthlyCashFlowResponse(
+                        month.toString(),
+                        monthlyIncome.getOrDefault(month, BigDecimal.ZERO),
+                        monthlyExpense.getOrDefault(month, BigDecimal.ZERO)
+                )
+        );
+    }
+
+    return response;
+}
 }
