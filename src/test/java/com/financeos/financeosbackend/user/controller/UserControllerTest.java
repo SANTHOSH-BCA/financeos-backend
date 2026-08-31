@@ -55,13 +55,13 @@ class UserControllerTest {
         request.setFullName("Santhosh");
         request.setEmail("santhosh@gmail.com");
         request.setPassword("Password@123");
-        request.setFinancialProfile("STUDENT");
+
 
         UserResponse response = new UserResponse();
         response.setId(1L);
         response.setFullName("Santhosh");
         response.setEmail("santhosh@gmail.com");
-        response.setFinancialProfile("STUDENT");
+
 
         when(userService.registerUser(any(RegisterUserRequest.class)))
                 .thenReturn(response);
@@ -72,8 +72,8 @@ class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.fullName").value("Santhosh"))
-                .andExpect(jsonPath("$.email").value("santhosh@gmail.com"))
-                .andExpect(jsonPath("$.financialProfile").value("STUDENT"));
+                .andExpect(jsonPath("$.email").value("santhosh@gmail.com"));
+
     }
 
     @Test

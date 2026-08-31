@@ -12,7 +12,8 @@ import com.financeos.financeosbackend.user.dto.UserResponse;
 import com.financeos.financeosbackend.user.dto.LoginRequest;
 import com.financeos.financeosbackend.user.dto.LoginResponse;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactory;import com.financeos.financeosbackend.financialprofile.entity.FinancialProfile;
+import com.financeos.financeosbackend.financialprofile.repository.FinancialProfileRepository;
 
 @Service
 public class UserService {
@@ -26,6 +27,10 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private FinancialProfileRepository financialProfileRepository;
+
+
 
     public UserResponse registerUser(RegisterUserRequest request){
 
@@ -38,7 +43,8 @@ public class UserService {
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFinancialProfile(request.getFinancialProfile());
+        user.setFinancialProfile("V2");
+
 
         User savedUser = userRepository.save(user);
 
@@ -46,10 +52,14 @@ public class UserService {
 
         UserResponse response = new UserResponse();
 
+        FinancialProfile profile = new FinancialProfile();
+        profile.setUser(savedUser);
+
+        financialProfileRepository.save(profile);
+
         response.setId(savedUser.getId());
         response.setFullName(savedUser.getFullName());
         response.setEmail(savedUser.getEmail());
-        response.setFinancialProfile(savedUser.getFinancialProfile());
         response.setCreatedAt(savedUser.getCreatedAt());
         response.setUpdatedAt(savedUser.getUpdatedAt());
 

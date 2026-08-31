@@ -15,7 +15,8 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.util.List;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToMany;import com.financeos.financeosbackend.financialprofile.entity.FinancialProfile;import jakarta.persistence.OneToOne;
+import jakarta.persistence.CascadeType;
 
 @Getter
 @Setter
@@ -41,6 +42,9 @@ public class User {
 
     @Column(name = "financial_profile", nullable = false)
     private String financialProfile;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private FinancialProfile financialProfileData;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

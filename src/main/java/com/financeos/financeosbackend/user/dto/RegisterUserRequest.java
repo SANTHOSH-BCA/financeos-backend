@@ -21,6 +21,4 @@ public class RegisterUserRequest {
     @NotBlank(message = "Password is required")
     private String password;
 
-    @NotBlank(message = "Financial profile is required")
-    private String financialProfile;
 }

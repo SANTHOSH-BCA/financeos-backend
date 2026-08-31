@@ -4,12 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.financeos.financeosbackend.user.dto.RegisterUserRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.web.servlet.MockMvc;
 import com.financeos.financeosbackend.user.dto.LoginRequest;
+
 import java.util.UUID;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -20,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class UserIntegrationTest extends BaseIntegrationTest{
+class UserIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("Should register user successfully")
@@ -31,7 +30,6 @@ class UserIntegrationTest extends BaseIntegrationTest{
         request.setFullName("Santhosh");
         request.setEmail(UUID.randomUUID() + "@gmail.com");
         request.setPassword("Password@123");
-        request.setFinancialProfile("STUDENT");
 
         mockMvc.perform(post("/api/users/register")
                         .contentType(APPLICATION_JSON)
@@ -39,7 +37,7 @@ class UserIntegrationTest extends BaseIntegrationTest{
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.fullName").value("Santhosh"))
-                .andExpect(jsonPath("$.financialProfile").value("STUDENT"));
+                .andExpect(jsonPath("$.email").value(request.getEmail()));
     }
 
     @Test
@@ -51,7 +49,6 @@ class UserIntegrationTest extends BaseIntegrationTest{
         request.setFullName("");
         request.setEmail("abc");
         request.setPassword("");
-        request.setFinancialProfile("");
 
         mockMvc.perform(post("/api/users/register")
                         .contentType(APPLICATION_JSON)
@@ -78,7 +75,6 @@ class UserIntegrationTest extends BaseIntegrationTest{
         request.setFullName("Santhosh");
         request.setEmail(email);
         request.setPassword("Password@123");
-        request.setFinancialProfile("STUDENT");
 
         // First Registration
         mockMvc.perform(post("/api/users/register")
@@ -105,7 +101,6 @@ class UserIntegrationTest extends BaseIntegrationTest{
         register.setFullName("Santhosh");
         register.setEmail(email);
         register.setPassword("Password@123");
-        register.setFinancialProfile("STUDENT");
 
         mockMvc.perform(post("/api/users/register")
                         .contentType(APPLICATION_JSON)
@@ -134,7 +129,6 @@ class UserIntegrationTest extends BaseIntegrationTest{
         register.setFullName("Santhosh");
         register.setEmail(email);
         register.setPassword("Password@123");
-        register.setFinancialProfile("STUDENT");
 
         mockMvc.perform(post("/api/users/register")
                         .contentType(APPLICATION_JSON)
@@ -178,5 +172,4 @@ class UserIntegrationTest extends BaseIntegrationTest{
                         .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isBadRequest());
     }
-
 }

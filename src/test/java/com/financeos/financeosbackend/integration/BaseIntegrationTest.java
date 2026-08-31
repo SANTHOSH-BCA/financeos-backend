@@ -86,7 +86,7 @@ public abstract class BaseIntegrationTest {
         request.setFullName("Integration User");
         request.setEmail(email);
         request.setPassword(DEFAULT_PASSWORD);
-        request.setFinancialProfile("STUDENT");
+
 
         return request;
     }

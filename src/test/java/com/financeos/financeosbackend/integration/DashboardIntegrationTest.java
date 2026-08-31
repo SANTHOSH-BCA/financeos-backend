@@ -2,7 +2,7 @@ package com.financeos.financeosbackend.integration;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -14,7 +14,7 @@ class DashboardIntegrationTest extends BaseIntegrationTest {
 
         String token = createAuthenticatedUser();
 
-        mockMvc.perform(get("/api/dashboard")
+        mockMvc.perform(get("/api/v1/dashboard")
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -40,8 +40,9 @@ class DashboardIntegrationTest extends BaseIntegrationTest {
         createInvestment(token);
         createGoal(token);
 
-        mockMvc.perform(get("/api/dashboard")
+        mockMvc.perform(get("/api/v1/dashboard")
                         .header("Authorization", bearer(token)))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.incomeCount").value(1))
@@ -64,7 +65,7 @@ class DashboardIntegrationTest extends BaseIntegrationTest {
 
         String userTwoToken = createAuthenticatedUser();
 
-        mockMvc.perform(get("/api/dashboard")
+        mockMvc.perform(get("/api/v1/dashboard")
                         .header("Authorization", bearer(userTwoToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.incomeCount").value(0))
@@ -78,7 +79,7 @@ class DashboardIntegrationTest extends BaseIntegrationTest {
     @DisplayName("Should reject unauthorized dashboard access")
     void shouldRejectUnauthorizedDashboardAccess() throws Exception {
 
-        mockMvc.perform(get("/api/dashboard"))
+        mockMvc.perform(get("/api/v1/dashboard"))
                 .andExpect(status().isForbidden());
     }
 }

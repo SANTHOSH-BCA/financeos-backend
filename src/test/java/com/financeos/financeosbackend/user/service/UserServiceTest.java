@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.*;import com.financeos.financeosbackend.financialprofile.repository.FinancialProfileRepository;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -34,6 +34,9 @@ class UserServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private FinancialProfileRepository financialProfileRepository;
+
     @InjectMocks
     private UserService userService;
 
@@ -44,7 +47,7 @@ class UserServiceTest {
         request.setFullName("Santhosh");
         request.setEmail("santhosh@gmail.com");
         request.setPassword("password123");
-        request.setFinancialProfile("STUDENT");
+
 
         User savedUser = new User();
         savedUser.setId(1L);
@@ -70,7 +73,7 @@ class UserServiceTest {
         assertEquals(1L, response.getId());
         assertEquals("Santhosh", response.getFullName());
         assertEquals("santhosh@gmail.com", response.getEmail());
-        assertEquals("STUDENT", response.getFinancialProfile());
+
 
         verify(userRepository).findByEmail(request.getEmail());
         verify(passwordEncoder).encode(request.getPassword());
@@ -84,7 +87,7 @@ class UserServiceTest {
         request.setFullName("Santhosh");
         request.setEmail("santhosh@gmail.com");
         request.setPassword("password123");
-        request.setFinancialProfile("STUDENT");
+
 
         User existingUser = new User();
         existingUser.setEmail("santhosh@gmail.com");

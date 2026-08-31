@@ -108,8 +108,8 @@ class DashboardServiceTest {
         verify(expenseRepository).getTotalExpenseByUser(user);
         verify(investmentRepository).getTotalInvestmentByUser(user);
         verify(goalRepository).countGoalsByUser(user);
-        verify(expenseRepository, times(2)).countExpensesByUser(user);
-        verify(incomeRepository, times(2)).countIncomeByUser(user);
+        verify(expenseRepository).countExpensesByUser(user);
+        verify(incomeRepository).countIncomeByUser(user);
         verify(investmentRepository).countInvestmentsByUser(user);
     }
 }

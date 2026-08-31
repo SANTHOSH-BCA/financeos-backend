@@ -19,8 +19,6 @@ public class UserResponse {
 
     private String email;
 
-    private String financialProfile;
-
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
