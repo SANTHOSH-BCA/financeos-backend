@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDate;import com.financeos.financeosbackend.goal.enums.GoalStatus;
 
 public class AddGoalRequest {
 
@@ -23,8 +23,8 @@ public class AddGoalRequest {
     @NotNull(message = "Target date is required")
     private LocalDate targetDate;
 
-    @NotBlank(message = "Goal status is required")
-    private String goalStatus;
+    @NotNull(message = "Goal status is required")
+    private GoalStatus goalStatus;
 
     public AddGoalRequest() {
     }
@@ -61,11 +61,11 @@ public class AddGoalRequest {
         this.targetDate = targetDate;
     }
 
-    public String getGoalStatus() {
+    public GoalStatus getGoalStatus() {
         return goalStatus;
     }
 
-    public void setGoalStatus(String goalStatus) {
+    public void setGoalStatus(GoalStatus goalStatus) {
         this.goalStatus = goalStatus;
     }
 }

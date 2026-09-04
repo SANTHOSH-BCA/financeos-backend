@@ -5,6 +5,7 @@ import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import com.financeos.financeosbackend.goal.dto.AddGoalRequest;
 import com.financeos.financeosbackend.goal.dto.GoalResponse;
 import com.financeos.financeosbackend.goal.entity.Goal;
+import com.financeos.financeosbackend.goal.enums.GoalStatus;
 import com.financeos.financeosbackend.goal.repository.GoalRepository;
 import com.financeos.financeosbackend.user.entity.User;
 import com.financeos.financeosbackend.user.repository.UserRepository;
@@ -50,7 +51,7 @@ class GoalServiceTest {
         request.setTargetAmount(new BigDecimal("100000"));
         request.setCurrentAmount(new BigDecimal("25000"));
         request.setTargetDate(LocalDate.now().plusMonths(6));
-        request.setGoalStatus("IN_PROGRESS");
+        request.setGoalStatus(GoalStatus.ON_TRACK);
 
         User user = new User();
         user.setId(1L);
@@ -61,7 +62,7 @@ class GoalServiceTest {
         savedGoal.setTargetAmount(new BigDecimal("100000"));
         savedGoal.setCurrentAmount(new BigDecimal("25000"));
         savedGoal.setTargetDate(LocalDate.now().plusMonths(6));
-        savedGoal.setGoalStatus("IN_PROGRESS");
+        savedGoal.setGoalStatus(GoalStatus.ON_TRACK);
 
         when(currentUserService.getCurrentUser())
                 .thenReturn(user);
@@ -76,7 +77,7 @@ class GoalServiceTest {
         assertEquals("Buy Bike", response.getGoalName());
         assertEquals(new BigDecimal("100000"), response.getTargetAmount());
         assertEquals(new BigDecimal("25000"), response.getCurrentAmount());
-        assertEquals("IN_PROGRESS", response.getGoalStatus());
+        assertEquals(GoalStatus.ON_TRACK, response.getGoalStatus());
 
         verify(currentUserService).getCurrentUser();
         verify(goalRepository).save(any(Goal.class));
@@ -90,7 +91,7 @@ class GoalServiceTest {
         request.setTargetAmount(new BigDecimal("100000"));
         request.setCurrentAmount(new BigDecimal("25000"));
         request.setTargetDate(LocalDate.now().minusDays(1));
-        request.setGoalStatus("IN_PROGRESS");
+        request.setGoalStatus(GoalStatus.ON_TRACK);
 
         IllegalArgumentException exception =
                 assertThrows(
@@ -115,7 +116,7 @@ class GoalServiceTest {
         goal.setTargetAmount(new BigDecimal("100000"));
         goal.setCurrentAmount(new BigDecimal("25000"));
         goal.setTargetDate(LocalDate.now().plusMonths(6));
-        goal.setGoalStatus("IN_PROGRESS");
+        goal.setGoalStatus(GoalStatus.ON_TRACK);
 
         Page<Goal> page =
                 new PageImpl<>(List.of(goal));
@@ -129,7 +130,7 @@ class GoalServiceTest {
                 .thenReturn(page);
 
         Page<GoalResponse> response =
-                goalService.getMyGoals(PageRequest.of(0,5));
+                goalService.getMyGoals(PageRequest.of(0, 5));
 
         assertEquals(1, response.getTotalElements());
 
@@ -139,7 +140,7 @@ class GoalServiceTest {
         assertEquals("Buy Bike", first.getGoalName());
         assertEquals(new BigDecimal("100000"), first.getTargetAmount());
         assertEquals(new BigDecimal("25000"), first.getCurrentAmount());
-        assertEquals("IN_PROGRESS", first.getGoalStatus());
+        assertEquals(GoalStatus.ON_TRACK, first.getGoalStatus());
 
         verify(currentUserService).getCurrentUser();
         verify(goalRepository)
@@ -154,7 +155,7 @@ class GoalServiceTest {
         request.setTargetAmount(new BigDecimal("800000"));
         request.setCurrentAmount(new BigDecimal("100000"));
         request.setTargetDate(LocalDate.now().plusYears(1));
-        request.setGoalStatus("IN_PROGRESS");
+        request.setGoalStatus(GoalStatus.ON_TRACK);
 
         User user = new User();
         user.setEmail("santhosh@gmail.com");
@@ -164,7 +165,7 @@ class GoalServiceTest {
         goal.setTargetAmount(new BigDecimal("100000"));
         goal.setCurrentAmount(new BigDecimal("25000"));
         goal.setTargetDate(LocalDate.now().plusMonths(6));
-        goal.setGoalStatus("IN_PROGRESS");
+        goal.setGoalStatus(GoalStatus.ON_TRACK);
         goal.setUser(user);
 
         when(currentUserService.getCurrentUser())
@@ -183,8 +184,10 @@ class GoalServiceTest {
         assertEquals("Buy Car", response.getGoalName());
         assertEquals(new BigDecimal("800000"), response.getTargetAmount());
         assertEquals(new BigDecimal("100000"), response.getCurrentAmount());
-        assertEquals(LocalDate.now().plusYears(1), response.getTargetDate());
-        assertEquals("IN_PROGRESS", response.getGoalStatus());
+        assertEquals(
+                LocalDate.now().plusYears(1),
+                response.getTargetDate());
+        assertEquals(GoalStatus.ON_TRACK, response.getGoalStatus());
 
         verify(currentUserService).getCurrentUser();
         verify(goalRepository).findByIdAndUser(1L, user);
@@ -199,7 +202,7 @@ class GoalServiceTest {
         request.setTargetAmount(new BigDecimal("800000"));
         request.setCurrentAmount(new BigDecimal("100000"));
         request.setTargetDate(LocalDate.now().plusYears(1));
-        request.setGoalStatus("IN_PROGRESS");
+        request.setGoalStatus(GoalStatus.ON_TRACK);
 
         User user = new User();
         user.setEmail("santhosh@gmail.com");
@@ -211,7 +214,8 @@ class GoalServiceTest {
                 .thenReturn(Optional.empty());
 
         ResourceNotFoundException exception =
-                assertThrows(ResourceNotFoundException.class,
+                assertThrows(
+                        ResourceNotFoundException.class,
                         () -> goalService.updateGoal(1L, request));
 
         assertEquals("Goal not found", exception.getMessage());
@@ -232,7 +236,7 @@ class GoalServiceTest {
         goal.setTargetAmount(new BigDecimal("100000"));
         goal.setCurrentAmount(new BigDecimal("25000"));
         goal.setTargetDate(LocalDate.now().plusMonths(6));
-        goal.setGoalStatus("IN_PROGRESS");
+        goal.setGoalStatus(GoalStatus.ON_TRACK);
         goal.setUser(user);
 
         when(currentUserService.getCurrentUser())
@@ -261,7 +265,8 @@ class GoalServiceTest {
                 .thenReturn(Optional.empty());
 
         ResourceNotFoundException exception =
-                assertThrows(ResourceNotFoundException.class,
+                assertThrows(
+                        ResourceNotFoundException.class,
                         () -> goalService.deleteGoal(1L));
 
         assertEquals("Goal not found", exception.getMessage());
@@ -271,4 +276,55 @@ class GoalServiceTest {
         verify(goalRepository, never()).delete(any(Goal.class));
     }
 
+    @Test
+    void getGoalProgress_ShouldCalculateProgressCorrectly() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        Goal goal = new Goal();
+        goal.setGoalName("Buy Laptop");
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("25000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(5));
+        goal.setGoalStatus(GoalStatus.ON_TRACK);
+        goal.setUser(user);
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(goalRepository.findByIdAndUser(1L, user))
+                .thenReturn(Optional.of(goal));
+
+        var response = goalService.getGoalProgress(1L);
+
+        assertNotNull(response);
+        assertEquals(new BigDecimal("100000"), response.getTargetAmount());
+        assertEquals(new BigDecimal("25000"), response.getCurrentAmount());
+        assertEquals(new BigDecimal("75000"), response.getRemainingAmount());
+
+        verify(currentUserService).getCurrentUser();
+        verify(goalRepository).findByIdAndUser(1L, user);
+    }
+
+    @Test
+    void getGoalProgress_ShouldThrowException_WhenGoalNotFound() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(goalRepository.findByIdAndUser(1L, user))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ResourceNotFoundException.class,
+                () -> goalService.getGoalProgress(1L)
+        );
+
+        verify(currentUserService).getCurrentUser();
+        verify(goalRepository).findByIdAndUser(1L, user);
+    }
 }

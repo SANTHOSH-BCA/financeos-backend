@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Positive;import com.financeos.financeosbackend.income.enums.IncomePattern;
 public class AddIncomeRequest {
 
     @NotBlank(message = "Income source is required")
@@ -17,6 +17,8 @@ public class AddIncomeRequest {
 
     @NotNull(message = "Income date is required")
     private LocalDate incomeDate;
+
+    private IncomePattern pattern = IncomePattern.IRREGULAR;
 
     public String getSource() {
         return source;
@@ -40,5 +42,13 @@ public class AddIncomeRequest {
 
     public void setIncomeDate(LocalDate incomeDate) {
         this.incomeDate = incomeDate;
+    }
+
+    public IncomePattern getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(IncomePattern pattern) {
+        this.pattern = pattern;
     }
 }

@@ -23,15 +23,28 @@ import com.financeos.financeosbackend.common.dto.ApiResponse;
 import com.financeos.financeosbackend.common.util.ResponseBuilder;
 import org.springframework.http.ResponseEntity;
 import com.financeos.financeosbackend.common.dto.ApiResponse;
-import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;import com.financeos.financeosbackend.investment.dto.InvestmentHoldingPerformanceResponse;import com.financeos.financeosbackend.investment.dto.InvestmentAllocationResponse;import com.financeos.financeosbackend.investment.dto.InvestmentValuationHistoryResponse;import com.financeos.financeosbackend.investment.dto.InvestmentIntelligenceResponse;
+import com.financeos.financeosbackend.investment.service.InvestmentIntelligenceService;import com.financeos.financeosbackend.investment.dto.InvestmentInsightResponse;
+import com.financeos.financeosbackend.investment.service.InvestmentInsightService;import com.financeos.financeosbackend.investment.dto.InvestmentDataQualityResponse;
+import com.financeos.financeosbackend.investment.service.InvestmentDataQualityService;import org.springdoc.core.annotations.ParameterObject;import org.springframework.data.domain.PageRequest;
 @RestController
 @RequestMapping("/api/investments")
 public class InvestmentController {
 
     private final InvestmentService investmentService;
+    private final InvestmentIntelligenceService investmentIntelligenceService;
+    private final InvestmentInsightService investmentInsightService;
+    private final InvestmentDataQualityService investmentDataQualityService;
 
-    public InvestmentController(InvestmentService investmentService) {
+    public InvestmentController(InvestmentService investmentService,
+                                InvestmentIntelligenceService investmentIntelligenceService,
+                                InvestmentInsightService investmentInsightService,
+                                InvestmentDataQualityService investmentDataQualityService) {
+
         this.investmentService = investmentService;
+        this.investmentIntelligenceService = investmentIntelligenceService;
+        this.investmentInsightService = investmentInsightService;
+        this.investmentDataQualityService = investmentDataQualityService;
     }
 
     @GetMapping("/test")
@@ -55,7 +68,10 @@ public class InvestmentController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<InvestmentResponse>> getMyInvestments(
-            Pageable pageable) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
 
         Page<InvestmentResponse> response =
                 investmentService.getMyInvestments(pageable);
@@ -89,6 +105,96 @@ public class InvestmentController {
         return ResponseBuilder.success(
                 "Investment deleted successfully",
                 null
+        );
+    }
+
+    @GetMapping("/performance")
+    public ResponseEntity<ApiResponse<InvestmentPerformanceResponse>> getPortfolioPerformance() {
+
+        InvestmentPerformanceResponse response =
+                investmentService.getPortfolioPerformance();
+
+        return ResponseBuilder.success(
+                "Investment portfolio performance retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/performance/holdings")
+    public ResponseEntity<ApiResponse<List<InvestmentHoldingPerformanceResponse>>>
+    getHoldingPerformance() {
+
+        List<InvestmentHoldingPerformanceResponse> response =
+                investmentService.getHoldingPerformance();
+
+        return ResponseBuilder.success(
+                "Investment holding performance retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/allocation")
+    public ResponseEntity<ApiResponse<List<InvestmentAllocationResponse>>>
+    getAssetAllocation() {
+
+        List<InvestmentAllocationResponse> response =
+                investmentService.getAssetAllocation();
+
+        return ResponseBuilder.success(
+                "Investment asset allocation retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<ApiResponse<List<InvestmentValuationHistoryResponse>>>
+    getInvestmentHistory(@PathVariable Long id) {
+
+        List<InvestmentValuationHistoryResponse> response =
+                investmentService.getInvestmentHistory(id);
+
+        return ResponseBuilder.success(
+                "Investment history retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/intelligence")
+    public ResponseEntity<ApiResponse<InvestmentIntelligenceResponse>>
+    getInvestmentIntelligence() {
+
+        InvestmentIntelligenceResponse response =
+                investmentIntelligenceService.getInvestmentIntelligence();
+
+        return ResponseBuilder.success(
+                "Investment intelligence retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/insights")
+    public ResponseEntity<ApiResponse<List<InvestmentInsightResponse>>>
+    getInvestmentInsights() {
+
+        List<InvestmentInsightResponse> response =
+                investmentInsightService.getInvestmentInsights();
+
+        return ResponseBuilder.success(
+                "Investment insights retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/data-quality")
+    public ResponseEntity<ApiResponse<InvestmentDataQualityResponse>>
+    getInvestmentDataQuality() {
+
+        InvestmentDataQualityResponse response =
+                investmentDataQualityService.validateInvestments();
+
+        return ResponseBuilder.success(
+                "Investment data quality retrieved successfully",
+                response
         );
     }
 

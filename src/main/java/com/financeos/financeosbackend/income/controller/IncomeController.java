@@ -10,7 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import com.financeos.financeosbackend.common.dto.ApiResponse;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseEntity;import com.financeos.financeosbackend.income.dto.MonthlyIncomeResponse;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/incomes")
@@ -78,6 +79,22 @@ public class IncomeController {
                         HttpStatus.OK.value(),
                         "Income deleted successfully",
                         null
+                )
+        );
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<List<MonthlyIncomeResponse>>>
+    getMonthlyIncomeHistory() {
+
+        List<MonthlyIncomeResponse> response =
+                incomeService.getMonthlyIncomeHistory();
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        HttpStatus.OK.value(),
+                        "Monthly income history fetched successfully",
+                        response
                 )
         );
     }

@@ -22,6 +22,9 @@ public class AddInvestmentRequest {
     @NotNull(message = "Investment date is required")
     private LocalDate investmentDate;
 
+    @DecimalMin(value = "0.00", message = "Current value cannot be negative")
+    private BigDecimal currentValue;
+
     public AddInvestmentRequest() {
     }
 
@@ -55,5 +58,13 @@ public class AddInvestmentRequest {
 
     public void setInvestmentDate(LocalDate investmentDate) {
         this.investmentDate = investmentDate;
+    }
+
+    public BigDecimal getCurrentValue() {
+        return currentValue;
+    }
+
+    public void setCurrentValue(BigDecimal currentValue) {
+        this.currentValue = currentValue;
     }
 }

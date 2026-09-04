@@ -1,6 +1,7 @@
 package com.financeos.financeosbackend.integration.helper;
 
 import com.financeos.financeosbackend.goal.dto.AddGoalRequest;
+import com.financeos.financeosbackend.goal.enums.GoalStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,7 +19,7 @@ public final class GoalTestHelper {
         request.setTargetAmount(new BigDecimal("100000"));
         request.setCurrentAmount(new BigDecimal("25000"));
         request.setTargetDate(LocalDate.now().plusMonths(12));
-        request.setGoalStatus("IN_PROGRESS");
+        request.setGoalStatus(GoalStatus.ON_TRACK);
 
         return request;
     }
@@ -31,7 +32,7 @@ public final class GoalTestHelper {
         request.setTargetAmount(new BigDecimal("500000"));
         request.setCurrentAmount(new BigDecimal("100000"));
         request.setTargetDate(LocalDate.now().plusYears(2));
-        request.setGoalStatus("IN_PROGRESS");
+        request.setGoalStatus(GoalStatus.ON_TRACK);
 
         return request;
     }
@@ -44,7 +45,7 @@ public final class GoalTestHelper {
         request.setTargetAmount(BigDecimal.ZERO);
         request.setCurrentAmount(new BigDecimal("-1"));
         request.setTargetDate(null);
-        request.setGoalStatus("");
+        request.setGoalStatus(null);
 
         return request;
     }

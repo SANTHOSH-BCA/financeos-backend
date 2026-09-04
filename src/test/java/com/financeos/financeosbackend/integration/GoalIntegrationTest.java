@@ -6,9 +6,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import java.time.LocalDate;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
 class GoalIntegrationTest extends BaseIntegrationTest {
 
     @Test
@@ -23,12 +26,13 @@ class GoalIntegrationTest extends BaseIntegrationTest {
                         .header("Authorization", bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.goalName").value("Laptop"))
                 .andExpect(jsonPath("$.data.targetAmount").value(100000))
                 .andExpect(jsonPath("$.data.currentAmount").value(25000))
-                .andExpect(jsonPath("$.data.goalStatus").value("IN_PROGRESS"));
+                .andExpect(jsonPath("$.data.goalStatus").value("ON_TRACK"));
     }
 
     @Test
@@ -64,7 +68,7 @@ class GoalIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.goalName").value("Car"))
                 .andExpect(jsonPath("$.targetAmount").value(500000))
                 .andExpect(jsonPath("$.currentAmount").value(100000))
-                .andExpect(jsonPath("$.goalStatus").value("IN_PROGRESS"));
+                .andExpect(jsonPath("$.goalStatus").value("ON_TRACK"));
     }
 
     @Test
@@ -182,4 +186,48 @@ class GoalIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(0));
     }
 
+    @Test
+    @DisplayName("Should calculate goal progress after contribution")
+    void shouldCalculateGoalProgressAfterContribution() throws Exception {
+
+        String token = createAuthenticatedUser();
+
+        Long goalId = createGoal(token);
+
+        mockMvc.perform(post("/api/goals/{id}/contributions", goalId)
+                        .header("Authorization", bearer(token))
+                        .param("amount", "5000")
+                        .param("contributionDate", LocalDate.now().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.goalId").value(goalId))
+                .andExpect(jsonPath("$.amount").value(5000));
+
+        mockMvc.perform(get("/api/goals/{id}/progress", goalId)
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentAmount").value(30000))
+                .andExpect(jsonPath("$.remainingAmount").value(70000));
+    }
+
+    @Test
+    @DisplayName("Should return goal contributions")
+    void shouldReturnGoalContributions() throws Exception {
+
+        String token = createAuthenticatedUser();
+
+        Long goalId = createGoal(token);
+
+        mockMvc.perform(post("/api/goals/{id}/contributions", goalId)
+                        .header("Authorization", bearer(token))
+                        .param("amount", "5000")
+                        .param("contributionDate", LocalDate.now().toString()))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/goals/{id}/contributions", goalId)
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].goalId").value(goalId))
+                .andExpect(jsonPath("$[0].amount").value(5000));
+    }
 }

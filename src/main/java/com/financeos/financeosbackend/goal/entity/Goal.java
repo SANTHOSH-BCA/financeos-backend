@@ -4,7 +4,7 @@ import com.financeos.financeosbackend.user.entity.User;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDate;import com.financeos.financeosbackend.goal.enums.GoalStatus;
 
 @Entity
 @Table(name = "goals")
@@ -16,16 +16,21 @@ public class Goal {
 
     private String goalName;
 
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal targetAmount;
 
-    private BigDecimal currentAmount;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal currentAmount = BigDecimal.ZERO;
 
+    @Column(nullable = false)
     private LocalDate targetDate;
 
-    private String goalStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private GoalStatus goalStatus;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     public Goal() {
@@ -67,11 +72,11 @@ public class Goal {
         this.targetDate = targetDate;
     }
 
-    public String getGoalStatus() {
+    public GoalStatus getGoalStatus() {
         return goalStatus;
     }
 
-    public void setGoalStatus(String goalStatus) {
+    public void setGoalStatus(GoalStatus goalStatus) {
         this.goalStatus = goalStatus;
     }
 

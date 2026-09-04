@@ -1,7 +1,7 @@
 package com.financeos.financeosbackend.goal.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDate;import com.financeos.financeosbackend.goal.enums.GoalStatus;
 
 public class GoalResponse {
 
@@ -15,7 +15,11 @@ public class GoalResponse {
 
     private LocalDate targetDate;
 
-    private String goalStatus;
+    private GoalStatus goalStatus;
+
+    private BigDecimal remainingAmount;
+
+    private BigDecimal progressPercentage;
 
     public GoalResponse() {
     }
@@ -60,11 +64,27 @@ public class GoalResponse {
         this.targetDate = targetDate;
     }
 
-    public String getGoalStatus() {
+    public GoalStatus getGoalStatus() {
         return goalStatus;
     }
 
-    public void setGoalStatus(String goalStatus) {
+    public void setGoalStatus(GoalStatus goalStatus) {
         this.goalStatus = goalStatus;
+    }
+
+    public BigDecimal getRemainingAmount() {
+        return remainingAmount;
+    }
+
+    public void setRemainingAmount(BigDecimal remainingAmount) {
+        this.remainingAmount = remainingAmount;
+    }
+
+    public BigDecimal getProgressPercentage() {
+        return progressPercentage;
+    }
+
+    public void setProgressPercentage(BigDecimal progressPercentage) {
+        this.progressPercentage = progressPercentage;
     }
 }

@@ -8,7 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import com.financeos.financeosbackend.user.entity.User;
+import com.financeos.financeosbackend.user.entity.User;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
 
 
 @Getter
@@ -38,5 +38,9 @@ public class Expense {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transaction_id", unique = true)
+    private FinancialTransaction transaction;
 
 }

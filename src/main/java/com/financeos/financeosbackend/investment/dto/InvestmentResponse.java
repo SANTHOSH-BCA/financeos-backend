@@ -13,7 +13,19 @@ public class InvestmentResponse {
 
     private BigDecimal amount;
 
+    private BigDecimal currentValue;
+
+    private BigDecimal totalInvestedAmount;
+
+    private BigDecimal profitLoss;
+
+    private BigDecimal returnPercentage;
+
     private LocalDate investmentDate;
+
+    private LocalDate valuationDate;
+
+    private Long transactionId;
 
     public InvestmentResponse() {
     }
@@ -50,11 +62,59 @@ public class InvestmentResponse {
         this.amount = amount;
     }
 
+    public BigDecimal getCurrentValue() {
+        return currentValue;
+    }
+
+    public void setCurrentValue(BigDecimal currentValue) {
+        this.currentValue = currentValue;
+    }
+
+    public BigDecimal getTotalInvestedAmount() {
+        return totalInvestedAmount;
+    }
+
+    public void setTotalInvestedAmount(BigDecimal totalInvestedAmount) {
+        this.totalInvestedAmount = totalInvestedAmount;
+    }
+
+    public BigDecimal getProfitLoss() {
+        return profitLoss;
+    }
+
+    public void setProfitLoss(BigDecimal profitLoss) {
+        this.profitLoss = profitLoss;
+    }
+
+    public BigDecimal getReturnPercentage() {
+        return returnPercentage;
+    }
+
+    public void setReturnPercentage(BigDecimal returnPercentage) {
+        this.returnPercentage = returnPercentage;
+    }
+
     public LocalDate getInvestmentDate() {
         return investmentDate;
     }
 
     public void setInvestmentDate(LocalDate investmentDate) {
         this.investmentDate = investmentDate;
+    }
+
+    public LocalDate getValuationDate() {
+        return valuationDate;
+    }
+
+    public void setValuationDate(LocalDate valuationDate) {
+        this.valuationDate = valuationDate;
+    }
+
+    public Long getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(Long transactionId) {
+        this.transactionId = transactionId;
     }
 }

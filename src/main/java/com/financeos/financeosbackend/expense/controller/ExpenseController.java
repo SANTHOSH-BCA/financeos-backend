@@ -82,7 +82,7 @@ public class ExpenseController {
 
     @GetMapping("/filter")
     public ResponseEntity<PagedResponse<ExpenseResponse>> filterExpenses(
-            ExpenseFilterRequest request,
+            @ModelAttribute ExpenseFilterRequest request,
             Pageable pageable) {
 
         Page<ExpenseResponse> response =

@@ -1,7 +1,7 @@
 package com.financeos.financeosbackend.income.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDate;import com.financeos.financeosbackend.income.enums.IncomePattern;
 
 public class IncomeResponse {
 
@@ -12,6 +12,10 @@ public class IncomeResponse {
     private BigDecimal amount;
 
     private LocalDate incomeDate;
+
+    private Long transactionId;
+
+    private IncomePattern pattern;
 
     public Long getId() {
         return id;
@@ -43,5 +47,21 @@ public class IncomeResponse {
 
     public void setIncomeDate(LocalDate incomeDate) {
         this.incomeDate = incomeDate;
+    }
+
+    public Long getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(Long transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public IncomePattern getPattern() {
+        return pattern;
+    }
+
+    public void setPattern(IncomePattern pattern) {
+        this.pattern = pattern;
     }
 }

@@ -9,12 +9,14 @@ import java.util.Optional;
 import java.math.BigDecimal;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import java.util.List;
+import java.util.List;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
 public interface InvestmentRepository extends JpaRepository<Investment, Long> {
 
     Page<Investment> findByUser(User user, Pageable pageable);
 
     Optional<Investment> findByIdAndUser(Long id, User user);
+
+    Optional<Investment> findByTransaction(FinancialTransaction transaction);
 
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Investment i WHERE i.user = :user")
     BigDecimal getTotalInvestmentByUser(@Param("user") User user);
@@ -29,4 +31,18 @@ WHERE i.user = :user
 GROUP BY i.investmentType
 """)
     List<Object[]> getInvestmentDistributionByUser(@Param("user") User user);
+
+    @Query("""
+    SELECT COALESCE(SUM(i.currentValue), 0)
+    FROM Investment i
+    WHERE i.user = :user
+    """)
+    BigDecimal getTotalCurrentValueByUser(@Param("user") User user);
+
+    @Query("""
+    SELECT COALESCE(SUM(i.currentValue - i.totalInvestedAmount), 0)
+    FROM Investment i
+    WHERE i.user = :user
+    """)
+    BigDecimal getTotalProfitLossByUser(@Param("user") User user);
 }

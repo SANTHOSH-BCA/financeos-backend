@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;import com.financeos.financeosbackend.goal.enums.GoalStatus;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -44,7 +44,7 @@ class GoalRepositoryTest {
         goal.setTargetAmount(new BigDecimal("100000"));
         goal.setCurrentAmount(new BigDecimal("25000"));
         goal.setTargetDate(LocalDate.now().plusMonths(6));
-        goal.setGoalStatus("IN_PROGRESS");
+        goal.setGoalStatus(GoalStatus.ON_TRACK);
         goal.setUser(user);
 
         return goalRepository.save(goal);
@@ -104,7 +104,7 @@ class GoalRepositoryTest {
         goal2.setTargetAmount(new BigDecimal("80000"));
         goal2.setCurrentAmount(new BigDecimal("10000"));
         goal2.setTargetDate(LocalDate.now().plusMonths(4));
-        goal2.setGoalStatus("IN_PROGRESS");
+        goal2.setGoalStatus(GoalStatus.ON_TRACK);
         goal2.setUser(user);
 
         goalRepository.save(goal2);

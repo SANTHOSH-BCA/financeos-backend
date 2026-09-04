@@ -21,7 +21,15 @@ import org.springframework.data.jpa.domain.Specification;
 import com.financeos.financeosbackend.expense.dto.ExpenseFilterRequest;
 import java.time.LocalDate;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.LoggerFactory;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
+import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
+import com.financeos.financeosbackend.transaction.enums.TransactionType;import com.financeos.financeosbackend.expense.dto.MonthlyExpenseResponse;import java.time.YearMonth;
+import java.util.Map;
+import java.util.stream.Collectors;import com.financeos.financeosbackend.expense.dto.MonthlyExpenseResponse;
+import java.math.BigDecimal;
+import java.time.YearMonth;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ExpenseService {
@@ -43,9 +51,7 @@ public class ExpenseService {
 
     public ExpenseResponse addExpense(AddExpenseRequest request) {
 
-        if (request.getExpenseDate().isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Expense date cannot be in the future");
-        }
+        validateExpenseDate(request.getExpenseDate());
 
         Expense expense = new Expense();
 
@@ -53,27 +59,27 @@ public class ExpenseService {
         expense.setAmount(request.getAmount());
         expense.setCategory(request.getCategory());
         expense.setExpenseDate(request.getExpenseDate());
+
         User user = currentUserService.getCurrentUser();
 
         expense.setUser(user);
 
-// Before saving
-        logger.info("Creating expense '{}' for user: {}", request.getTitle(), user.getEmail());
+        // Before saving
+        logger.info(
+                "Creating expense '{}' for user: {}",
+                request.getTitle(),
+                user.getEmail()
+        );
 
         Expense savedExpense = expenseRepository.save(expense);
 
-// After successful save
-        logger.info("Expense created successfully with ID: {}", savedExpense.getId());
+        // After successful save
+        logger.info(
+                "Expense created successfully with ID: {}",
+                savedExpense.getId()
+        );
 
-        ExpenseResponse response = new ExpenseResponse();
-
-        response.setId(savedExpense.getId());
-        response.setTitle(savedExpense.getTitle());
-        response.setAmount(savedExpense.getAmount());
-        response.setCategory(savedExpense.getCategory());
-        response.setExpenseDate(savedExpense.getExpenseDate());
-
-        return response;
+        return mapToResponse(savedExpense);
     }
 
     public Page<ExpenseResponse> getMyExpenses(Pageable pageable) {
@@ -85,6 +91,8 @@ public class ExpenseService {
     }
 
     public ExpenseResponse updateExpense(Long id, AddExpenseRequest request) {
+
+        validateExpenseDate(request.getExpenseDate());
 
         User user = currentUserService.getCurrentUser();
 
@@ -108,15 +116,7 @@ public class ExpenseService {
 
         logger.info("Expense updated successfully with ID: {}", updatedExpense.getId());
 
-        ExpenseResponse response = new ExpenseResponse();
-
-        response.setId(updatedExpense.getId());
-        response.setTitle(updatedExpense.getTitle());
-        response.setAmount(updatedExpense.getAmount());
-        response.setCategory(updatedExpense.getCategory());
-        response.setExpenseDate(updatedExpense.getExpenseDate());
-
-        return response;
+        return mapToResponse(updatedExpense);
     }
 
     public void deleteExpense(Long id) {
@@ -157,6 +157,34 @@ public class ExpenseService {
                 .map(this::mapToResponse);
     }
 
+    public List<MonthlyExpenseResponse> getMonthlyExpenseHistory() {
+
+        User user = currentUserService.getCurrentUser();
+
+        return expenseRepository.findByUser(user)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        expense -> YearMonth.from(
+                                expense.getExpenseDate()
+                        ),
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                Expense::getAmount,
+                                BigDecimal::add
+                        )
+                ))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry ->
+                        new MonthlyExpenseResponse(
+                                entry.getKey().toString(),
+                                entry.getValue()
+                        )
+                )
+                .toList();
+    }
+
     private ExpenseResponse mapToResponse(Expense expense) {
 
         ExpenseResponse response = new ExpenseResponse();
@@ -167,7 +195,137 @@ public class ExpenseService {
         response.setCategory(expense.getCategory());
         response.setExpenseDate(expense.getExpenseDate());
 
+        response.setTransactionId(
+                expense.getTransaction() != null
+                        ? expense.getTransaction().getId()
+                        : null
+        );
+
         return response;
+    }
+
+    private void validateExpenseDate(LocalDate expenseDate) {
+
+        if (expenseDate == null) {
+            throw new IllegalArgumentException("Expense date is required");
+        }
+
+        if (expenseDate.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException(
+                    "Expense date cannot be in the future"
+            );
+        }
+    }
+
+    public ExpenseResponse createExpenseFromTransaction(
+            FinancialTransaction transaction) {
+
+        User user = currentUserService.getCurrentUser();
+
+        if (!transaction.getUser().getId().equals(user.getId())) {
+            throw new ResourceNotFoundException("Transaction not found");
+        }
+
+        if (expenseRepository.findByTransaction(transaction).isPresent()) {
+            throw new IllegalStateException(
+                    "Transaction has already been converted to an expense"
+            );
+        }
+
+        if (transaction.getStatus() != TransactionStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                    "Only confirmed transactions can become expenses"
+            );
+        }
+
+        if (transaction.getType() != TransactionType.EXPENSE) {
+            throw new IllegalStateException(
+                    "Only expense transactions can become expenses"
+            );
+        }
+
+        Expense expense = new Expense();
+
+        expense.setTitle(
+                transaction.getMerchantPayee() != null
+                        ? transaction.getMerchantPayee()
+                        : "Transaction Expense"
+        );
+
+        expense.setAmount(transaction.getAmount());
+
+        expense.setCategory(
+                transaction.getCategory() != null
+                        ? transaction.getCategory()
+                        : "Uncategorized"
+        );
+
+        expense.setExpenseDate(
+                transaction.getTransactionDateTime().toLocalDate()
+        );
+
+        expense.setUser(user);
+        expense.setTransaction(transaction);
+
+        Expense savedExpense = expenseRepository.save(expense);
+
+        return mapToResponse(savedExpense);
+    }
+
+    public ExpenseResponse createExpenseFromHelpTransaction(
+            FinancialTransaction transaction) {
+
+        User user = currentUserService.getCurrentUser();
+
+        if (!transaction.getUser().getId().equals(user.getId())) {
+            throw new ResourceNotFoundException("Transaction not found");
+        }
+
+        if (expenseRepository.findByTransaction(transaction).isPresent()) {
+            throw new IllegalStateException(
+                    "Help transaction has already been converted to an expense"
+            );
+        }
+
+        if (transaction.getType() != TransactionType.HELP_GIVEN) {
+            throw new IllegalStateException(
+                    "Only help transactions can be converted to expenses"
+            );
+        }
+
+        if (transaction.getStatus() != TransactionStatus.HELP_OVERDUE) {
+            throw new IllegalStateException(
+                    "Only overdue help transactions can be converted to expenses"
+            );
+        }
+
+        Expense expense = new Expense();
+
+        expense.setTitle(
+                transaction.getMerchantPayee() != null
+                        ? transaction.getMerchantPayee()
+                        : "Help Expense"
+        );
+
+        expense.setAmount(transaction.getAmount());
+
+        expense.setCategory(
+                transaction.getCategory() != null
+                        ? transaction.getCategory()
+                        : "Uncategorized"
+        );
+
+        expense.setExpenseDate(
+                transaction.getTransactionDateTime().toLocalDate()
+        );
+
+        expense.setUser(user);
+        expense.setTransaction(transaction);
+
+        Expense savedExpense =
+                expenseRepository.save(expense);
+
+        return mapToResponse(savedExpense);
     }
 
 

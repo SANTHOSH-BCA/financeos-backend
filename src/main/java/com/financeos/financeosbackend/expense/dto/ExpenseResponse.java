@@ -24,4 +24,6 @@ public class ExpenseResponse {
 
     private LocalDate expenseDate;
 
+    private Long transactionId;
+
 }

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.financeos.financeosbackend.analytics.dto.MonthlySummary;
+import com.financeos.financeosbackend.analytics.dto.MonthlySummary;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
 public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     Page<Income> findByUser(User user, Pageable pageable);
@@ -19,14 +19,16 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     Optional<Income> findByIdAndUser(Long id, User user);
 
+    Optional<Income> findByTransaction(
+            FinancialTransaction transaction
+    );
+
+
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Income i WHERE i.user = :user")
     BigDecimal getTotalIncomeByUser(@Param("user") User user);
 
     @Query("SELECT COUNT(i) FROM Income i WHERE i.user = :user")
     Long countIncomeByUser(@Param("user") User user);
-
-    
-
 
 
 }
