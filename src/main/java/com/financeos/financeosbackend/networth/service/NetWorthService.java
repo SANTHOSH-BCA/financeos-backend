@@ -9,10 +9,13 @@ import com.financeos.financeosbackend.liability.enums.ResponsibilityType;
 import com.financeos.financeosbackend.liability.repository.LiabilityRepository;
 import com.financeos.financeosbackend.user.entity.User;
 import org.springframework.stereotype.Service;
-
+import com.financeos.financeosbackend.asset.enums.AssetType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import com.financeos.financeosbackend.asset.enums.AssetType;
+import java.util.Map;
+import java.util.EnumMap;
 
 @Service
 public class NetWorthService {
@@ -29,6 +32,21 @@ public class NetWorthService {
         this.assetRepository = assetRepository;
         this.liabilityRepository = liabilityRepository;
         this.currentUserService = currentUserService;
+    }
+
+    public BigDecimal calculateRecognizedLiquidAssets() {
+
+        User user = currentUserService.getCurrentUser();
+
+        List<Asset> assets = assetRepository.findAllByUser(user);
+
+        return assets.stream()
+                .filter(asset ->
+                        asset.getAssetType() == AssetType.CASH
+                                || asset.getAssetType() == AssetType.BANK_ACCOUNT
+                )
+                .map(this::calculateRecognizedAssetValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal calculateRecognizedAssets() {
@@ -107,6 +125,30 @@ public class NetWorthService {
                         2,
                         RoundingMode.HALF_UP
                 );
+    }
+
+    public Map<AssetType, BigDecimal> calculateRecognizedAssetAllocation() {
+
+        User user = currentUserService.getCurrentUser();
+
+        List<Asset> assets = assetRepository.findAllByUser(user);
+
+        Map<AssetType, BigDecimal> allocation =
+                new EnumMap<>(AssetType.class);
+
+        for (Asset asset : assets) {
+
+            BigDecimal recognizedValue =
+                    calculateRecognizedAssetValue(asset);
+
+            allocation.merge(
+                    asset.getAssetType(),
+                    recognizedValue,
+                    BigDecimal::add
+            );
+        }
+
+        return allocation;
     }
 
 
