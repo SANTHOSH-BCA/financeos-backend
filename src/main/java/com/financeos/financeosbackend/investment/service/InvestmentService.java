@@ -25,7 +25,9 @@ import java.util.ArrayList;import com.financeos.financeosbackend.investment.dto.
 import com.financeos.financeosbackend.investment.entity.InvestmentValuationHistory;
 import com.financeos.financeosbackend.investment.repository.InvestmentValuationHistoryRepository;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
 import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
-import com.financeos.financeosbackend.transaction.enums.TransactionType;
+import com.financeos.financeosbackend.transaction.enums.TransactionType;import com.financeos.financeosbackend.investment.dto.InvestmentExposureResponse;import java.util.HashMap;
+import java.util.Map;
+import java.math.RoundingMode;import com.financeos.financeosbackend.networth.service.NetWorthService;
 
 
 @Service
@@ -38,16 +40,19 @@ public class InvestmentService {
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final InvestmentValuationHistoryRepository valuationHistoryRepository;
+    private final NetWorthService netWorthService;
 
     public InvestmentService(InvestmentRepository investmentRepository,
                              UserRepository userRepository,
                              CurrentUserService currentUserService,
-                             InvestmentValuationHistoryRepository valuationHistoryRepository) {
+                             InvestmentValuationHistoryRepository valuationHistoryRepository,
+                             NetWorthService netWorthService) {
 
         this.investmentRepository = investmentRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.valuationHistoryRepository = valuationHistoryRepository;
+        this.netWorthService = netWorthService;
     }
 
     public InvestmentResponse addInvestment(AddInvestmentRequest request) {
@@ -323,6 +328,97 @@ public class InvestmentService {
                 investmentRepository.save(investment);
 
         return mapToResponse(savedInvestment);
+    }
+
+    public List<InvestmentExposureResponse> getInvestmentExposure() {
+
+        User user = currentUserService.getCurrentUser();
+
+        List<Investment> investments =
+                investmentRepository.findByUser(
+                        user,
+                        org.springframework.data.domain.Pageable.unpaged()
+                ).getContent();
+
+        Map<String, BigDecimal> exposureByType = new HashMap<>();
+
+        for (Investment investment : investments) {
+
+            String investmentType = investment.getInvestmentType();
+
+            if (investmentType == null || investmentType.isBlank()) {
+                continue;
+            }
+
+            BigDecimal currentValue =
+                    investment.getCurrentValue() != null
+                            ? investment.getCurrentValue()
+                            : investment.getTotalInvestedAmount() != null
+                              ? investment.getTotalInvestedAmount()
+                              : investment.getAmount();
+
+            exposureByType.merge(
+                    investmentType,
+                    currentValue,
+                    BigDecimal::add
+            );
+        }
+
+        BigDecimal totalCurrentValue =
+                exposureByType.values()
+                        .stream()
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<InvestmentExposureResponse> response = new ArrayList<>();
+
+        for (Map.Entry<String, BigDecimal> entry : exposureByType.entrySet()) {
+
+            BigDecimal exposurePercentage = BigDecimal.ZERO;
+
+            if (totalCurrentValue.compareTo(BigDecimal.ZERO) > 0) {
+                exposurePercentage =
+                        entry.getValue()
+                                .multiply(BigDecimal.valueOf(100))
+                                .divide(
+                                        totalCurrentValue,
+                                        2,
+                                        RoundingMode.HALF_UP
+                                );
+            }
+
+            response.add(
+                    new InvestmentExposureResponse(
+                            entry.getKey(),
+                            entry.getValue(),
+                            exposurePercentage
+                    )
+            );
+        }
+
+        return response;
+    }
+
+    public BigDecimal calculateInvestmentToNetWorthPercentage() {
+
+        BigDecimal investmentValue =
+                investmentRepository.getTotalCurrentValueByUser(
+                        currentUserService.getCurrentUser()
+                );
+
+        BigDecimal netWorth =
+                netWorthService.calculateNetWorth();
+
+        if (netWorth.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        return investmentValue
+                .multiply(BigDecimal.valueOf(100))
+                .divide(
+                        netWorth,
+                        2,
+                        RoundingMode.HALF_UP
+                );
     }
 
     private void calculatePerformance(Investment investment) {

@@ -25,7 +25,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.*;import com.financeos.financeosbackend.networth.service.NetWorthService;import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class InvestmentServiceTest {
@@ -38,6 +38,9 @@ class InvestmentServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private NetWorthService netWorthService;
 
     @InjectMocks
     private InvestmentService investmentService;
@@ -259,6 +262,244 @@ class InvestmentServiceTest {
         verify(currentUserService).getCurrentUser();
         verify(investmentRepository).findByIdAndUser(1L, user);
         verify(investmentRepository, never()).delete(any(Investment.class));
+    }
+
+    @Test
+    void getPortfolioPerformance_ShouldCalculatePortfolioMetrics() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.getTotalInvestmentByUser(user))
+                .thenReturn(new BigDecimal("100000"));
+
+        when(investmentRepository.getTotalCurrentValueByUser(user))
+                .thenReturn(new BigDecimal("115000"));
+
+        when(investmentRepository.getTotalProfitLossByUser(user))
+                .thenReturn(new BigDecimal("15000"));
+
+        when(investmentRepository.countInvestmentsByUser(user))
+                .thenReturn(4L);
+
+        InvestmentPerformanceResponse response =
+                investmentService.getPortfolioPerformance();
+
+        assertNotNull(response);
+
+        assertEquals(
+                new BigDecimal("100000"),
+                response.getTotalInvestedAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("115000"),
+                response.getCurrentPortfolioValue()
+        );
+
+        assertEquals(
+                new BigDecimal("15000"),
+                response.getTotalProfitLoss()
+        );
+
+        assertEquals(
+                new BigDecimal("15.000000"),
+                response.getReturnPercentage()
+        );
+
+        assertEquals(
+                4L,
+                response.getInvestmentCount()
+        );
+
+        verify(investmentRepository).getTotalInvestmentByUser(user);
+        verify(investmentRepository).getTotalCurrentValueByUser(user);
+        verify(investmentRepository).getTotalProfitLossByUser(user);
+        verify(investmentRepository).countInvestmentsByUser(user);
+    }
+
+    @Test
+    void getAssetAllocation_ShouldCalculateAllocationByInvestmentType() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.getInvestmentDistributionByUser(user))
+                .thenReturn(List.of(
+                        new Object[]{
+                                "Mutual Fund",
+                                new BigDecimal("60000")
+                        },
+                        new Object[]{
+                                "Stocks",
+                                new BigDecimal("40000")
+                        }
+                ));
+
+        when(investmentRepository.getTotalInvestmentByUser(user))
+                .thenReturn(new BigDecimal("100000"));
+
+        var response = investmentService.getAssetAllocation();
+
+        assertNotNull(response);
+        assertEquals(2, response.size());
+
+        assertEquals(
+                "Mutual Fund",
+                response.get(0).getInvestmentType()
+        );
+
+        assertEquals(
+                new BigDecimal("60000"),
+                response.get(0).getInvestedAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("60.000000"),
+                response.get(0).getAllocationPercentage()
+        );
+
+        assertEquals(
+                "Stocks",
+                response.get(1).getInvestmentType()
+        );
+
+        assertEquals(
+                new BigDecimal("40000"),
+                response.get(1).getInvestedAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("40.000000"),
+                response.get(1).getAllocationPercentage()
+        );
+    }
+
+    @Test
+    void getInvestmentExposure_ShouldCalculateExposureByInvestmentType() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        Investment mutualFund = new Investment();
+        mutualFund.setInvestmentType("Mutual Fund");
+        mutualFund.setTotalInvestedAmount(new BigDecimal("60000"));
+        mutualFund.setCurrentValue(new BigDecimal("70000"));
+
+        Investment stocks = new Investment();
+        stocks.setInvestmentType("Stocks");
+        stocks.setTotalInvestedAmount(new BigDecimal("40000"));
+        stocks.setCurrentValue(new BigDecimal("30000"));
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.findByUser(
+                eq(user),
+                any(Pageable.class)
+        )).thenReturn(
+                new PageImpl<>(
+                        List.of(mutualFund, stocks)
+                )
+        );
+
+        var response = investmentService.getInvestmentExposure();
+
+        assertNotNull(response);
+        assertEquals(2, response.size());
+
+        var mutualFundExposure = response.stream()
+                .filter(item ->
+                        "Mutual Fund".equals(item.getInvestmentType()))
+                .findFirst()
+                .orElseThrow();
+
+        var stocksExposure = response.stream()
+                .filter(item ->
+                        "Stocks".equals(item.getInvestmentType()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(
+                new BigDecimal("70000"),
+                mutualFundExposure.getCurrentValue()
+        );
+
+        assertEquals(
+                new BigDecimal("70.00"),
+                mutualFundExposure.getExposurePercentage()
+        );
+
+        assertEquals(
+                new BigDecimal("30000"),
+                stocksExposure.getCurrentValue()
+        );
+
+        assertEquals(
+                new BigDecimal("30.00"),
+                stocksExposure.getExposurePercentage()
+        );
+    }
+
+    @Test
+    void calculateInvestmentToNetWorthPercentage_ShouldCalculateCorrectly() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.getTotalCurrentValueByUser(user))
+                .thenReturn(new BigDecimal("60000"));
+
+        when(netWorthService.calculateNetWorth())
+                .thenReturn(new BigDecimal("200000"));
+
+        BigDecimal result =
+                investmentService.calculateInvestmentToNetWorthPercentage();
+
+        assertEquals(
+                new BigDecimal("30.00"),
+                result
+        );
+
+        verify(currentUserService).getCurrentUser();
+        verify(investmentRepository)
+                .getTotalCurrentValueByUser(user);
+        verify(netWorthService).calculateNetWorth();
+    }
+
+    @Test
+    void calculateInvestmentToNetWorthPercentage_ShouldReturnZero_WhenNetWorthIsZero() {
+
+        User user = new User();
+        user.setEmail("santhosh@gmail.com");
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.getTotalCurrentValueByUser(user))
+                .thenReturn(new BigDecimal("60000"));
+
+        when(netWorthService.calculateNetWorth())
+                .thenReturn(BigDecimal.ZERO);
+
+        BigDecimal result =
+                investmentService.calculateInvestmentToNetWorthPercentage();
+
+        assertEquals(
+                BigDecimal.ZERO,
+                result
+        );
+
+        verify(netWorthService).calculateNetWorth();
     }
 
 }

@@ -10,7 +10,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
+import java.util.List;import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class InvestmentInsightService {
@@ -99,6 +100,52 @@ public class InvestmentInsightService {
                         largestInvestment.getInvestmentName()
                                 + " represents "
                                 + concentration
+                                + "% of your invested portfolio"
+                ));
+            }
+        }
+
+        Map<String, BigDecimal> investmentTypeTotals = new HashMap<>();
+
+        for (Investment investment : investments) {
+            String investmentType = investment.getInvestmentType();
+
+            if (investmentType == null || investmentType.isBlank()) {
+                continue;
+            }
+
+            investmentTypeTotals.merge(
+                    investmentType,
+                    getInvestedAmount(investment),
+                    BigDecimal::add
+            );
+        }
+
+        if (!investmentTypeTotals.isEmpty()
+                && totalInvested.compareTo(BigDecimal.ZERO) > 0) {
+
+            Map.Entry<String, BigDecimal> dominantType =
+                    investmentTypeTotals.entrySet()
+                            .stream()
+                            .max(Map.Entry.comparingByValue())
+                            .orElse(null);
+
+            if (dominantType != null) {
+
+                BigDecimal typeConcentration =
+                        dominantType.getValue()
+                                .multiply(BigDecimal.valueOf(100))
+                                .divide(
+                                        totalInvested,
+                                        2,
+                                        java.math.RoundingMode.HALF_UP
+                                );
+
+                insights.add(new InvestmentInsightResponse(
+                        "ASSET_CLASS_CONCENTRATION",
+                        dominantType.getKey()
+                                + " represents "
+                                + typeConcentration
                                 + "% of your invested portfolio"
                 ));
             }

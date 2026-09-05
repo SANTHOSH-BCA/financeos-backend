@@ -26,7 +26,7 @@ import com.financeos.financeosbackend.common.dto.ApiResponse;
 import com.financeos.financeosbackend.common.util.ResponseBuilder;import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;import com.financeos.financeosbackend.investment.dto.InvestmentHoldingPerformanceResponse;import com.financeos.financeosbackend.investment.dto.InvestmentAllocationResponse;import com.financeos.financeosbackend.investment.dto.InvestmentValuationHistoryResponse;import com.financeos.financeosbackend.investment.dto.InvestmentIntelligenceResponse;
 import com.financeos.financeosbackend.investment.service.InvestmentIntelligenceService;import com.financeos.financeosbackend.investment.dto.InvestmentInsightResponse;
 import com.financeos.financeosbackend.investment.service.InvestmentInsightService;import com.financeos.financeosbackend.investment.dto.InvestmentDataQualityResponse;
-import com.financeos.financeosbackend.investment.service.InvestmentDataQualityService;import org.springdoc.core.annotations.ParameterObject;import org.springframework.data.domain.PageRequest;
+import com.financeos.financeosbackend.investment.service.InvestmentDataQualityService;import org.springdoc.core.annotations.ParameterObject;import org.springframework.data.domain.PageRequest;import com.financeos.financeosbackend.investment.dto.InvestmentExposureResponse;
 @RestController
 @RequestMapping("/api/investments")
 public class InvestmentController {
@@ -195,6 +195,13 @@ public class InvestmentController {
         return ResponseBuilder.success(
                 "Investment data quality retrieved successfully",
                 response
+        );
+    }
+
+    @GetMapping("/exposure")
+    public ResponseEntity<List<InvestmentExposureResponse>> getInvestmentExposure() {
+        return ResponseEntity.ok(
+                investmentService.getInvestmentExposure()
         );
     }
 
