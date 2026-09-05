@@ -1,15 +1,10 @@
-package com.financeos.financeosbackend.goal.service;
+package com.financeos.financeosbackend.goalintelligence.service;
 
+import com.financeos.financeosbackend.cashflow.service.CashFlowService;
 import com.financeos.financeosbackend.common.service.CurrentUserService;
-import com.financeos.financeosbackend.expense.dto.MonthlyExpenseResponse;
-import com.financeos.financeosbackend.expense.service.ExpenseService;
-import com.financeos.financeosbackend.goal.dto.GoalIntelligenceResponse;
 import com.financeos.financeosbackend.goal.entity.Goal;
 import com.financeos.financeosbackend.goal.enums.GoalStatus;
 import com.financeos.financeosbackend.goal.repository.GoalRepository;
-import com.financeos.financeosbackend.income.dto.MonthlyIncomeResponse;
-import com.financeos.financeosbackend.income.service.IncomeService;
-import com.financeos.financeosbackend.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,26 +28,65 @@ class GoalIntelligenceServiceTest {
     private CurrentUserService currentUserService;
 
     @Mock
-    private IncomeService incomeService;
-
-    @Mock
-    private ExpenseService expenseService;
+    private CashFlowService cashFlowService;
 
     @InjectMocks
     private GoalIntelligenceService goalIntelligenceService;
 
     @Test
-    void getGoalIntelligence_ShouldCalculateFinancialCapacity() {
-
-        User user = new User();
-        user.setEmail("santhosh@gmail.com");
+    void calculateProgressPercentage_ShouldReturnCorrectPercentage() {
 
         Goal goal = new Goal();
-        goal.setGoalName("Buy Laptop");
-        goal.setTargetAmount(new BigDecimal("80000"));
-        goal.setCurrentAmount(new BigDecimal("10000"));
-        goal.setTargetDate(LocalDate.now().plusMonths(6));
-        goal.setGoalStatus(GoalStatus.ON_TRACK);
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("25000"));
+
+        BigDecimal result =
+                goalIntelligenceService.calculateProgressPercentage(goal);
+
+        assertEquals(
+                new BigDecimal("25.00"),
+                result
+        );
+    }
+
+    @Test
+    void calculateRemainingAmount_ShouldReturnRemainingAmount() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("25000"));
+
+        BigDecimal result =
+                goalIntelligenceService.calculateRemainingAmount(goal);
+
+        assertEquals(
+                new BigDecimal("75000"),
+                result
+        );
+    }
+
+    @Test
+    void calculateRemainingAmount_ShouldReturnZeroWhenGoalExceeded() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("120000"));
+
+        BigDecimal result =
+                goalIntelligenceService.calculateRemainingAmount(goal);
+
+        assertEquals(
+                BigDecimal.ZERO,
+                result
+        );
+    }
+
+    @Test
+    void getMyGoals_ShouldReturnCurrentUsersGoals() {
+
+        var user = new com.financeos.financeosbackend.user.entity.User();
+
+        Goal goal = new Goal();
         goal.setUser(user);
 
         when(currentUserService.getCurrentUser())
@@ -61,93 +95,217 @@ class GoalIntelligenceServiceTest {
         when(goalRepository.findByUser(user))
                 .thenReturn(List.of(goal));
 
-        when(incomeService.getMonthlyIncomeHistory())
-                .thenReturn(List.of(
-                        new MonthlyIncomeResponse(
-                                "2026-09",
-                                new BigDecimal("55000")
-                        )
-                ));
+        List<Goal> result =
+                goalIntelligenceService.getMyGoals();
 
-        when(expenseService.getMonthlyExpenseHistory())
-                .thenReturn(List.of(
-                        new MonthlyExpenseResponse(
-                                "2026-09",
-                                new BigDecimal("7800")
-                        )
-                ));
-
-        GoalIntelligenceResponse response =
-                goalIntelligenceService.getGoalIntelligence();
-
-        assertNotNull(response);
-
-        assertEquals(
-                new BigDecimal("55000"),
-                response.getMonthlyIncome()
-        );
-
-        assertEquals(
-                new BigDecimal("7800"),
-                response.getMonthlyExpenses()
-        );
-
-        assertEquals(
-                new BigDecimal("47200"),
-                response.getFinancialCapacity()
-        );
-
-        assertEquals(
-                1L,
-                response.getFinanciallyAchievableGoals()
-        );
+        assertEquals(1, result.size());
+        assertEquals(goal, result.get(0));
 
         verify(currentUserService).getCurrentUser();
         verify(goalRepository).findByUser(user);
-        verify(incomeService).getMonthlyIncomeHistory();
-        verify(expenseService).getMonthlyExpenseHistory();
     }
 
     @Test
-    void getGoalIntelligence_ShouldHandleNoGoals() {
+    void calculateCurrentContributionCapacity_ShouldReturnCurrentSavings() {
 
-        User user = new User();
-        user.setEmail("santhosh@gmail.com");
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("30000"));
 
-        when(currentUserService.getCurrentUser())
-                .thenReturn(user);
+        BigDecimal result =
+                goalIntelligenceService
+                        .calculateCurrentContributionCapacity();
 
-        when(goalRepository.findByUser(user))
-                .thenReturn(List.of());
-
-        when(incomeService.getMonthlyIncomeHistory())
-                .thenReturn(List.of(
-                        new MonthlyIncomeResponse(
-                                "2026-09",
-                                new BigDecimal("55000")
-                        )
-                ));
-
-        when(expenseService.getMonthlyExpenseHistory())
-                .thenReturn(List.of(
-                        new MonthlyExpenseResponse(
-                                "2026-09",
-                                new BigDecimal("7800")
-                        )
-                ));
-
-        GoalIntelligenceResponse response =
-                goalIntelligenceService.getGoalIntelligence();
-
-        assertNotNull(response);
-        assertEquals(0L, response.getTotalGoals());
         assertEquals(
-                new BigDecimal("47200"),
-                response.getFinancialCapacity()
+                new BigDecimal("30000"),
+                result
         );
+
+        verify(cashFlowService).calculateSavings();
+    }
+
+    @Test
+    void calculateTimeToGoalInMonths_ShouldCalculateBasedOnContributionCapacity() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("120000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(12));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("20000"));
+
+        BigDecimal result =
+                goalIntelligenceService
+                        .calculateTimeToGoalInMonths(goal);
+
         assertEquals(
-                0L,
-                response.getFinanciallyAchievableGoals()
+                new BigDecimal("5.00"),
+                result
+        );
+
+        verify(cashFlowService).calculateSavings();
+    }
+
+    @Test
+    void calculateTimeToGoalInMonths_ShouldReturnZeroWhenNoContributionCapacity() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("120000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(12));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(BigDecimal.ZERO);
+
+        BigDecimal result =
+                goalIntelligenceService
+                        .calculateTimeToGoalInMonths(goal);
+
+        assertEquals(
+                BigDecimal.ZERO,
+                result
+        );
+    }
+
+    @Test
+    void calculateGoalStatus_ShouldReturnCompletedWhenTargetReached() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("100000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        GoalStatus result =
+                goalIntelligenceService.calculateGoalStatus(goal);
+
+        assertEquals(
+                GoalStatus.COMPLETED,
+                result
+        );
+
+        verifyNoInteractions(cashFlowService);
+    }
+
+    @Test
+    void calculateGoalStatus_ShouldReturnAtRiskWhenTargetDatePassed() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("25000"));
+        goal.setTargetDate(LocalDate.now().minusDays(1));
+
+        GoalStatus result =
+                goalIntelligenceService.calculateGoalStatus(goal);
+
+        assertEquals(
+                GoalStatus.AT_RISK,
+                result
+        );
+
+        verifyNoInteractions(cashFlowService);
+    }
+
+    @Test
+    void calculateGoalStatus_ShouldReturnOnTrackWhenCapacityMeetsRequirement() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("20000"));
+
+        GoalStatus result =
+                goalIntelligenceService.calculateGoalStatus(goal);
+
+        assertEquals(
+                GoalStatus.ON_TRACK,
+                result
+        );
+    }
+
+    @Test
+    void calculateGoalStatus_ShouldReturnAtRiskWhenCapacityIsInsufficient() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("5000"));
+
+        GoalStatus result =
+                goalIntelligenceService.calculateGoalStatus(goal);
+
+        assertEquals(
+                GoalStatus.AT_RISK,
+                result
+        );
+    }
+
+    @Test
+    void isGoalAtRisk_ShouldReturnTrueWhenGoalIsAtRisk() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("5000"));
+
+        assertTrue(
+                goalIntelligenceService.isGoalAtRisk(goal)
+        );
+    }
+
+    @Test
+    void isGoalAtRisk_ShouldReturnFalseWhenGoalIsOnTrack() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("20000"));
+
+        assertFalse(
+                goalIntelligenceService.isGoalAtRisk(goal)
+        );
+    }
+
+    @Test
+    void isGoalAffordable_ShouldReturnTrueWhenCapacityMeetsRequirement() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("20000"));
+
+        assertTrue(
+                goalIntelligenceService.isGoalAffordable(goal)
+        );
+    }
+
+    @Test
+    void isGoalAffordable_ShouldReturnFalseWhenCapacityIsInsufficient() {
+
+        Goal goal = new Goal();
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("20000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("5000"));
+
+        assertFalse(
+                goalIntelligenceService.isGoalAffordable(goal)
         );
     }
 }

@@ -17,7 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 
 
-@Service
+@Service("legacyGoalIntelligenceService")
 public class GoalIntelligenceService {
 
     private final GoalRepository goalRepository;
