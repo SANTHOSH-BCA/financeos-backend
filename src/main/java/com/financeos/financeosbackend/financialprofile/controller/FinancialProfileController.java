@@ -4,7 +4,8 @@ import com.financeos.financeosbackend.financialprofile.dto.CreateFinancialProfil
 import com.financeos.financeosbackend.financialprofile.dto.FinancialProfileResponse;
 import com.financeos.financeosbackend.financialprofile.service.FinancialProfileService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;import com.financeos.financeosbackend.financialprofile.dto.PlanningHorizonRequest;
+import com.financeos.financeosbackend.financialprofile.dto.PlanningHorizonResponse;import com.financeos.financeosbackend.financialprofile.dto.UpdateFinancialProfileRequest;
 
 @RestController
 @RequestMapping("/api/financial-profiles")
@@ -31,5 +32,24 @@ public class FinancialProfileController {
             @PathVariable Long userId
     ) {
         return financialProfileService.getProfile(userId);
+    }
+
+    @GetMapping("/me")
+    public FinancialProfileResponse getMyProfile() {
+        return financialProfileService.getMyProfile();
+    }
+
+    @PutMapping("/planning-horizon")
+    public PlanningHorizonResponse updatePlanningHorizon(
+            @Valid @RequestBody PlanningHorizonRequest request
+    ) {
+        return financialProfileService.updatePlanningHorizon(request);
+    }
+
+    @PutMapping("/me")
+    public FinancialProfileResponse updateMyProfile(
+            @Valid @RequestBody UpdateFinancialProfileRequest request
+    ) {
+        return financialProfileService.updateMyProfile(request);
     }
 }

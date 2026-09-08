@@ -1,17 +1,18 @@
 package com.financeos.financeosbackend.financialprofile.dto;
 
+import jakarta.validation.constraints.Past;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;import jakarta.validation.Valid;
-import java.util.List;
+import java.time.LocalDate;
 
 @Getter
 @Setter
 @NoArgsConstructor
-public class CreateFinancialProfileRequest {
+public class UpdateFinancialProfileRequest {
 
+    @Past
     private LocalDate dateOfBirth;
 
     private String occupation;
@@ -23,10 +24,4 @@ public class CreateFinancialProfileRequest {
     private String planningHorizon;
 
     private String financialResponsibility;
-
-    @Valid
-    private List<IncomeNatureRequest> incomeNatures;
-
-    @Valid
-    private List<FinancialPriorityRequest> financialPriorities;
 }
