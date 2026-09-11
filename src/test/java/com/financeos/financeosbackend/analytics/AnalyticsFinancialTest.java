@@ -24,10 +24,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-
+import com.financeos.financeosbackend.financialposition.service.FinancialPositionService;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
+import static org.mockito.Mockito.*;import com.financeos.financeosbackend.cashflow.service.CashFlowService;
+import com.financeos.financeosbackend.networth.service.NetWorthService;
+import com.financeos.financeosbackend.investment.service.InvestmentService;
+import com.financeos.financeosbackend.investment.service.InvestmentInsightService;
+import com.financeos.financeosbackend.goalintelligence.service.GoalIntelligenceService;
+import com.financeos.financeosbackend.financialhealth.service.FinancialHealthService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfileService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfileIncomeNatureService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfilePriorityService;
+import com.financeos.financeosbackend.financialprofile.service.InvestmentExperienceAssessmentService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialResponsibilityContextService;
+import com.financeos.financeosbackend.financialprofile.service.EmergencyFundContextService;
+import com.financeos.financeosbackend.financialprofile.service.ProtectionContextService;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsUnifiedV2Response;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsFinancialProfileV2Response;
 @ExtendWith(MockitoExtension.class)
 class AnalyticsFinancialTest {
 
@@ -45,6 +58,48 @@ class AnalyticsFinancialTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private CashFlowService cashFlowService;
+
+    @Mock
+    private FinancialPositionService financialPositionService;
+
+    @Mock
+    private NetWorthService netWorthService;
+
+    @Mock
+    private InvestmentService investmentService;
+
+    @Mock
+    private InvestmentInsightService investmentInsightService;
+
+    @Mock
+    private GoalIntelligenceService goalIntelligenceService;
+
+    @Mock
+    private FinancialHealthService financialHealthService;
+
+    @Mock
+    private FinancialProfileService financialProfileService;
+
+    @Mock
+    private FinancialProfileIncomeNatureService financialProfileIncomeNatureService;
+
+    @Mock
+    private FinancialProfilePriorityService financialProfilePriorityService;
+
+    @Mock
+    private InvestmentExperienceAssessmentService investmentExperienceAssessmentService;
+
+    @Mock
+    private FinancialResponsibilityContextService financialResponsibilityContextService;
+
+    @Mock
+    private EmergencyFundContextService emergencyFundContextService;
+
+    @Mock
+    private ProtectionContextService protectionContextService;
 
     @InjectMocks
     private AnalyticsService analyticsService;
@@ -272,6 +327,101 @@ class AnalyticsFinancialTest {
         verify(currentUserService).getCurrentUser();
         verify(incomeRepository).getTotalIncomeByUser(user);
         verify(expenseRepository).getTotalExpenseByUser(user);
+    }
+
+    @Test
+    void getUnifiedV2_ShouldReturnUnifiedAnalytics() {
+
+        when(financialPositionService.calculateNetWorth())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(financialPositionService.calculateNetCashFlow())
+                .thenReturn(new BigDecimal("47200"));
+
+        when(financialPositionService.calculateInvestmentValue())
+                .thenReturn(new BigDecimal("36000"));
+
+        when(financialPositionService.calculateDebtValue())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(financialPositionService.calculateLiquidAssets())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(financialPositionService.calculateAssetAllocation())
+                .thenReturn(java.util.Map.of());
+
+        when(financialPositionService.calculateSavings())
+                .thenReturn(new BigDecimal("47200"));
+
+        when(financialPositionService.calculateSavingsRate())
+                .thenReturn(new BigDecimal("85.82"));
+
+        when(cashFlowService.calculateIncludedInflows())
+                .thenReturn(new BigDecimal("55000"));
+
+        when(cashFlowService.calculateIncludedOutflows())
+                .thenReturn(new BigDecimal("7800"));
+
+        when(cashFlowService.calculateNetCashFlow())
+                .thenReturn(new BigDecimal("47200"));
+
+        when(cashFlowService.calculateSavings())
+                .thenReturn(new BigDecimal("47200"));
+
+        when(cashFlowService.calculateSavingsRate())
+                .thenReturn(new BigDecimal("85.82"));
+
+        when(netWorthService.calculateIncludedAssets())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(netWorthService.calculateIncludedLiabilities())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(netWorthService.calculateNetWorth())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(investmentService.calculateInvestmentToNetWorthPercentage())
+                .thenReturn(BigDecimal.ZERO);
+
+        when(goalIntelligenceService.getMyGoals())
+                .thenReturn(List.of());
+
+        when(financialProfileService.getMyProfile())
+                .thenReturn(null);
+
+        when(financialProfileIncomeNatureService.getIncomeNatures())
+                .thenReturn(List.of());
+
+        when(financialProfilePriorityService.getPriorities())
+                .thenReturn(List.of());
+
+        when(investmentExperienceAssessmentService.getAssessment())
+                .thenReturn(null);
+
+        when(financialResponsibilityContextService.get())
+                .thenReturn(null);
+
+        when(emergencyFundContextService.get())
+                .thenReturn(null);
+
+        when(protectionContextService.get())
+                .thenReturn(null);
+
+        AnalyticsUnifiedV2Response response =
+                analyticsService.getUnifiedV2();
+
+        assertNotNull(response);
+        assertNotNull(response.getFinancialPosition());
+        assertNotNull(response.getCashFlow());
+        assertNotNull(response.getNetWorth());
+        assertNotNull(response.getInvestments());
+        assertNotNull(response.getGoals());
+        assertNotNull(response.getFinancialHealth());
+        assertNotNull(response.getFinancialProfile());
+
+        verify(cashFlowService).calculateNetCashFlow();
+        verify(netWorthService).calculateNetWorth();
+        verify(financialPositionService).calculateNetWorth();
     }
 
 }

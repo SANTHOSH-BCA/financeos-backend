@@ -4,7 +4,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;import com.financeos.financeosbackend.cashflow.service.CashFlowService;
+import com.financeos.financeosbackend.networth.service.NetWorthService;
+import com.financeos.financeosbackend.investment.service.InvestmentService;
+import com.financeos.financeosbackend.investment.service.InvestmentInsightService;
+import com.financeos.financeosbackend.goalintelligence.service.GoalIntelligenceService;
+import com.financeos.financeosbackend.financialhealth.service.FinancialHealthService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfileService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfileIncomeNatureService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfilePriorityService;
+import com.financeos.financeosbackend.financialprofile.service.InvestmentExperienceAssessmentService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialResponsibilityContextService;
+import com.financeos.financeosbackend.financialprofile.service.EmergencyFundContextService;
+import com.financeos.financeosbackend.financialprofile.service.ProtectionContextService;
 
 class AnalyticsIntegrationTest extends BaseIntegrationTest {
 

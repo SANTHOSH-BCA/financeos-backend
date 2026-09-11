@@ -39,7 +39,22 @@ import com.financeos.financeosbackend.analytics.dto.GoalInsightResponse;
 import com.financeos.financeosbackend.analytics.dto.InvestmentInsightResponse;
 import com.financeos.financeosbackend.analytics.dto.SmartRecommendationResponse;
 import com.financeos.financeosbackend.analytics.dto.MonthlyFinancialSummaryResponse;
-import com.financeos.financeosbackend.analytics.dto.MonthlyCashFlowResponse;
+import com.financeos.financeosbackend.analytics.dto.MonthlyCashFlowResponse;import com.financeos.financeosbackend.cashflow.service.CashFlowService;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsCashFlowV2Response;import com.financeos.financeosbackend.networth.service.NetWorthService;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsNetWorthV2Response;import com.financeos.financeosbackend.investment.service.InvestmentService;
+import com.financeos.financeosbackend.investment.service.InvestmentInsightService;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsInvestmentV2Response;import com.financeos.financeosbackend.goalintelligence.service.GoalIntelligenceService;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsGoalV2Response;
+import com.financeos.financeosbackend.goal.enums.GoalStatus;import com.financeos.financeosbackend.financialhealth.service.FinancialHealthService;
+import com.financeos.financeosbackend.analytics.dto.AnalyticsFinancialHealthV2Response;import com.financeos.financeosbackend.financialprofile.service.FinancialProfileService;import com.financeos.financeosbackend.analytics.dto.AnalyticsFinancialProfileV2Response;import com.financeos.financeosbackend.financialprofile.service.EmergencyFundContextService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfileIncomeNatureService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialProfilePriorityService;
+import com.financeos.financeosbackend.financialprofile.service.FinancialResponsibilityContextService;
+import com.financeos.financeosbackend.financialprofile.service.InvestmentExperienceAssessmentService;
+import com.financeos.financeosbackend.financialprofile.service.ProtectionContextService;import com.financeos.financeosbackend.financialprofile.dto.EmergencyFundContextResponse;
+import com.financeos.financeosbackend.financialprofile.dto.FinancialResponsibilityContextResponse;
+import com.financeos.financeosbackend.financialprofile.dto.InvestmentExperienceAssessmentResponse;
+import com.financeos.financeosbackend.financialprofile.dto.ProtectionContextResponse;import com.financeos.financeosbackend.analytics.dto.AnalyticsUnifiedV2Response;import com.financeos.financeosbackend.financialposition.service.FinancialPositionService;import com.financeos.financeosbackend.analytics.dto.AnalyticsFinancialPositionV2Response;import com.financeos.financeosbackend.financialposition.dto.FinancialPositionResponse;import com.financeos.financeosbackend.analytics.dto.AnalyticsUnifiedV2Response;
 
 
 @Service
@@ -49,19 +64,61 @@ public class AnalyticsService {
     private final GoalRepository goalRepository;
     private final CurrentUserService currentUserService;
     private final InvestmentRepository investmentRepository;
+    private final CashFlowService cashFlowService;
+    private final FinancialPositionService financialPositionService;
+    private final NetWorthService netWorthService;
+    private final InvestmentService investmentService;
+    private final InvestmentInsightService investmentInsightService;
+    private final GoalIntelligenceService goalIntelligenceService;
+    private final FinancialHealthService financialHealthService;
+    private final FinancialProfileService financialProfileService;
+    private final FinancialProfileIncomeNatureService financialProfileIncomeNatureService;
+    private final FinancialProfilePriorityService financialProfilePriorityService;
+    private final InvestmentExperienceAssessmentService investmentExperienceAssessmentService;
+    private final FinancialResponsibilityContextService financialResponsibilityContextService;
+    private final EmergencyFundContextService emergencyFundContextService;
+    private final ProtectionContextService protectionContextService;
 
     public AnalyticsService(
             ExpenseRepository expenseRepository,
             IncomeRepository incomeRepository,
             GoalRepository goalRepository,
             InvestmentRepository investmentRepository,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            CashFlowService cashFlowService,
+            FinancialPositionService financialPositionService,
+            NetWorthService netWorthService,
+            InvestmentService investmentService,
+            InvestmentInsightService investmentInsightService,
+            GoalIntelligenceService goalIntelligenceService,
+            FinancialHealthService financialHealthService,
+            FinancialProfileService financialProfileService,
+            FinancialProfileIncomeNatureService financialProfileIncomeNatureService,
+            FinancialProfilePriorityService financialProfilePriorityService,
+            InvestmentExperienceAssessmentService investmentExperienceAssessmentService,
+            FinancialResponsibilityContextService financialResponsibilityContextService,
+            EmergencyFundContextService emergencyFundContextService,
+            ProtectionContextService protectionContextService) {
 
         this.expenseRepository = expenseRepository;
         this.incomeRepository = incomeRepository;
         this.currentUserService = currentUserService;
         this.goalRepository = goalRepository;
         this.investmentRepository = investmentRepository;
+        this.cashFlowService = cashFlowService;
+        this.financialPositionService = financialPositionService;
+        this.netWorthService = netWorthService;
+        this.investmentService = investmentService;
+        this.investmentInsightService = investmentInsightService;
+        this.goalIntelligenceService = goalIntelligenceService;
+        this.financialHealthService = financialHealthService;
+        this.financialProfileService = financialProfileService;
+        this.financialProfileIncomeNatureService = financialProfileIncomeNatureService;
+        this.financialProfilePriorityService = financialProfilePriorityService;
+        this.investmentExperienceAssessmentService = investmentExperienceAssessmentService;
+        this.financialResponsibilityContextService = financialResponsibilityContextService;
+        this.emergencyFundContextService = emergencyFundContextService;
+        this.protectionContextService = protectionContextService;
     }
 
     public List<MonthlyIncomeExpenseResponse> getMonthlyIncomeExpense() {
@@ -594,6 +651,23 @@ public class AnalyticsService {
         );
     }
 
+    public AnalyticsCashFlowV2Response getCashFlowV2() {
+
+        BigDecimal inflows = cashFlowService.calculateIncludedInflows();
+        BigDecimal outflows = cashFlowService.calculateIncludedOutflows();
+        BigDecimal netCashFlow = cashFlowService.calculateNetCashFlow();
+        BigDecimal savings = cashFlowService.calculateSavings();
+        BigDecimal savingsRate = cashFlowService.calculateSavingsRate();
+
+        return new AnalyticsCashFlowV2Response(
+                inflows,
+                outflows,
+                netCashFlow,
+                savings,
+                savingsRate
+        );
+    }
+
     public NetWorthResponse getNetWorth() {
 
         User user = currentUserService.getCurrentUser();
@@ -609,6 +683,24 @@ public class AnalyticsService {
         return new NetWorthResponse(
                 totalAssets,
                 totalLiabilities,
+                netWorth
+        );
+    }
+
+    public AnalyticsNetWorthV2Response getNetWorthV2() {
+
+        BigDecimal recognizedAssets =
+                netWorthService.calculateIncludedAssets();
+
+        BigDecimal recognizedLiabilities =
+                netWorthService.calculateIncludedLiabilities();
+
+        BigDecimal netWorth =
+                netWorthService.calculateNetWorth();
+
+        return new AnalyticsNetWorthV2Response(
+                recognizedAssets,
+                recognizedLiabilities,
                 netWorth
         );
     }
@@ -698,6 +790,17 @@ public class AnalyticsService {
         }
 
         return response;
+    }
+
+    public AnalyticsInvestmentV2Response getInvestmentV2() {
+
+        return new AnalyticsInvestmentV2Response(
+                investmentService.getPortfolioPerformance(),
+                investmentService.getAssetAllocation(),
+                investmentService.getInvestmentExposure(),
+                investmentInsightService.getInvestmentInsights(),
+                investmentService.calculateInvestmentToNetWorthPercentage()
+        );
     }
 
     public List<SmartRecommendationResponse> getSmartRecommendations() {
@@ -807,6 +910,169 @@ public class AnalyticsService {
         );
     }
 
+    public AnalyticsGoalV2Response getGoalV2() {
+
+        List<Goal> goals = goalIntelligenceService.getMyGoals();
+
+        int totalGoals = goals.size();
+        int completedGoals = 0;
+        int atRiskGoals = 0;
+        int onTrackGoals = 0;
+
+        BigDecimal totalTargetAmount = BigDecimal.ZERO;
+        BigDecimal totalCurrentAmount = BigDecimal.ZERO;
+        BigDecimal totalRemainingAmount = BigDecimal.ZERO;
+
+        for (Goal goal : goals) {
+
+            GoalStatus status =
+                    goalIntelligenceService.calculateGoalStatus(goal);
+
+            if (status == GoalStatus.COMPLETED) {
+                completedGoals++;
+            } else if (status == GoalStatus.AT_RISK) {
+                atRiskGoals++;
+            } else if (status == GoalStatus.ON_TRACK) {
+                onTrackGoals++;
+            }
+
+            totalTargetAmount =
+                    totalTargetAmount.add(goal.getTargetAmount());
+
+            totalCurrentAmount =
+                    totalCurrentAmount.add(goal.getCurrentAmount());
+
+            totalRemainingAmount =
+                    totalRemainingAmount.add(
+                            goalIntelligenceService.calculateRemainingAmount(goal)
+                    );
+        }
+
+        return new AnalyticsGoalV2Response(
+                totalGoals,
+                completedGoals,
+                atRiskGoals,
+                onTrackGoals,
+                totalTargetAmount,
+                totalCurrentAmount,
+                totalRemainingAmount
+        );
+    }
+
+    public AnalyticsFinancialHealthV2Response getFinancialHealthV2() {
+
+        return new AnalyticsFinancialHealthV2Response(
+                financialHealthService.calculateCashFlowHealth(),
+                financialHealthService.calculateDebtHealth(),
+                financialHealthService.calculateSavingsHealth(),
+                financialHealthService.calculateInvestmentHealth(),
+                financialHealthService.calculateGoalHealth(),
+                financialHealthService.calculateWealthHealth(),
+                financialHealthService.calculateOverallFinancialHealth()
+        );
+    }
+
+    public List<MonthlyCashFlowResponse> getMonthlyCashFlow() {
+
+        User user = currentUserService.getCurrentUser();
+
+        Map<YearMonth, BigDecimal> monthlyIncome = getMonthlyIncome(user);
+        Map<YearMonth, BigDecimal> monthlyExpense = getMonthlyExpense(user);
+
+        Set<YearMonth> allMonths = new TreeSet<>();
+        allMonths.addAll(monthlyIncome.keySet());
+        allMonths.addAll(monthlyExpense.keySet());
+
+        List<MonthlyCashFlowResponse> response = new ArrayList<>();
+
+        for (YearMonth month : allMonths) {
+
+            response.add(
+                    new MonthlyCashFlowResponse(
+                            month.toString(),
+                            monthlyIncome.getOrDefault(month, BigDecimal.ZERO),
+                            monthlyExpense.getOrDefault(month, BigDecimal.ZERO)
+                    )
+            );
+        }
+
+        return response;
+    }
+
+    public AnalyticsFinancialProfileV2Response getFinancialProfileV2() {
+
+        InvestmentExperienceAssessmentResponse investmentExperience = null;
+        FinancialResponsibilityContextResponse responsibility = null;
+        EmergencyFundContextResponse emergencyFund = null;
+        ProtectionContextResponse protection = null;
+
+        try {
+            investmentExperience =
+                    investmentExperienceAssessmentService.getAssessment();
+        } catch (RuntimeException ignored) {
+        }
+
+        try {
+            responsibility =
+                    financialResponsibilityContextService.get();
+        } catch (RuntimeException ignored) {
+        }
+
+        try {
+            emergencyFund =
+                    emergencyFundContextService.get();
+        } catch (RuntimeException ignored) {
+        }
+
+        try {
+            protection =
+                    protectionContextService.get();
+        } catch (RuntimeException ignored) {
+        }
+
+        return new AnalyticsFinancialProfileV2Response(
+                financialProfileService.getMyProfile(),
+                financialProfileIncomeNatureService.getIncomeNatures(),
+                financialProfilePriorityService.getPriorities(),
+                investmentExperience,
+                responsibility,
+                emergencyFund,
+                protection
+        );
+    }
+
+    public AnalyticsUnifiedV2Response getUnifiedV2() {
+
+        return new AnalyticsUnifiedV2Response(
+                getFinancialPositionV2(),
+                getCashFlowV2(),
+                getNetWorthV2(),
+                getInvestmentV2(),
+                getGoalV2(),
+                getFinancialHealthV2(),
+                getFinancialProfileV2()
+        );
+    }
+
+    public AnalyticsFinancialPositionV2Response getFinancialPositionV2() {
+
+        FinancialPositionResponse financialPosition =
+                new FinancialPositionResponse(
+                        financialPositionService.calculateNetWorth(),
+                        financialPositionService.calculateNetCashFlow(),
+                        financialPositionService.calculateInvestmentValue(),
+                        financialPositionService.calculateDebtValue(),
+                        financialPositionService.calculateLiquidAssets(),
+                        financialPositionService.calculateAssetAllocation(),
+                        financialPositionService.calculateSavings(),
+                        financialPositionService.calculateSavingsRate()
+                );
+
+        return new AnalyticsFinancialPositionV2Response(
+                financialPosition
+        );
+    }
+
     private Map<YearMonth, BigDecimal> getMonthlyIncome(User user) {
 
         List<Income> incomes = incomeRepository.findByUser(user);
@@ -837,30 +1103,4 @@ public class AnalyticsService {
                 ));
     }
 
-    public List<MonthlyCashFlowResponse> getMonthlyCashFlow() {
-
-    User user = currentUserService.getCurrentUser();
-
-    Map<YearMonth, BigDecimal> monthlyIncome = getMonthlyIncome(user);
-    Map<YearMonth, BigDecimal> monthlyExpense = getMonthlyExpense(user);
-
-    Set<YearMonth> allMonths = new TreeSet<>();
-    allMonths.addAll(monthlyIncome.keySet());
-    allMonths.addAll(monthlyExpense.keySet());
-
-    List<MonthlyCashFlowResponse> response = new ArrayList<>();
-
-    for (YearMonth month : allMonths) {
-
-        response.add(
-                new MonthlyCashFlowResponse(
-                        month.toString(),
-                        monthlyIncome.getOrDefault(month, BigDecimal.ZERO),
-                        monthlyExpense.getOrDefault(month, BigDecimal.ZERO)
-                )
-        );
-    }
-
-    return response;
-}
 }

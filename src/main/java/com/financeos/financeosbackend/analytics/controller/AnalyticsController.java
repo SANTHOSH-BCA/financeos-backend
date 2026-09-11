@@ -25,7 +25,9 @@ import com.financeos.financeosbackend.analytics.dto.SmartRecommendationResponse;
 import com.financeos.financeosbackend.analytics.dto.MonthlyFinancialSummaryResponse;
 import org.springframework.http.ResponseEntity;
 import com.financeos.financeosbackend.common.dto.ApiResponse;
-import com.financeos.financeosbackend.common.util.ResponseBuilder;
+import com.financeos.financeosbackend.common.util.ResponseBuilder;import com.financeos.financeosbackend.analytics.dto.AnalyticsCashFlowV2Response;import com.financeos.financeosbackend.analytics.dto.AnalyticsNetWorthV2Response;import com.financeos.financeosbackend.analytics.dto.AnalyticsInvestmentV2Response;import com.financeos.financeosbackend.analytics.dto.AnalyticsGoalV2Response;import com.financeos.financeosbackend.analytics.dto.AnalyticsFinancialHealthV2Response;import com.financeos.financeosbackend.analytics.dto.AnalyticsFinancialProfileV2Response;import com.financeos.financeosbackend.analytics.dto.AnalyticsUnifiedV2Response;
+
+
 @RestController
 @RequestMapping("/api/analytics")
 public class AnalyticsController {
@@ -228,7 +230,7 @@ public class AnalyticsController {
     }
 
     @GetMapping("/monthly-cash-flow")
-public ResponseEntity<ApiResponse<List<MonthlyCashFlowResponse>>> getMonthlyCashFlow() {
+    public ResponseEntity<ApiResponse<List<MonthlyCashFlowResponse>>> getMonthlyCashFlow() {
 
     List<MonthlyCashFlowResponse> response =
             analyticsService.getMonthlyCashFlow();
@@ -238,4 +240,71 @@ public ResponseEntity<ApiResponse<List<MonthlyCashFlowResponse>>> getMonthlyCash
             response
     );
 }
+
+    @GetMapping("/v2/cash-flow")
+    public ResponseEntity<ApiResponse<AnalyticsCashFlowV2Response>> getCashFlowV2() {
+
+        return ResponseBuilder.success(
+                "V2 cash flow retrieved successfully",
+                analyticsService.getCashFlowV2()
+        );
+    }
+
+    @GetMapping("/v2/net-worth")
+    public ResponseEntity<ApiResponse<AnalyticsNetWorthV2Response>> getNetWorthV2() {
+
+        return ResponseBuilder.success(
+                "V2 net worth retrieved successfully",
+                analyticsService.getNetWorthV2()
+        );
+    }
+
+    @GetMapping("/v2/investments")
+    public ResponseEntity<ApiResponse<AnalyticsInvestmentV2Response>> getInvestmentV2() {
+
+        return ResponseBuilder.success(
+                "V2 investment analytics retrieved successfully",
+                analyticsService.getInvestmentV2()
+        );
+    }
+
+    @GetMapping("/v2/goals")
+    public ResponseEntity<ApiResponse<AnalyticsGoalV2Response>> getGoalV2() {
+
+        return ResponseBuilder.success(
+                "V2 goal analytics retrieved successfully",
+                analyticsService.getGoalV2()
+        );
+    }
+
+    @GetMapping("/v2/financial-health")
+    public ResponseEntity<ApiResponse<AnalyticsFinancialHealthV2Response>> getFinancialHealthV2() {
+
+        return ResponseBuilder.success(
+                "V2 financial health retrieved successfully",
+                analyticsService.getFinancialHealthV2()
+        );
+    }
+
+    @GetMapping("/v2/financial-profile")
+    public ResponseEntity<ApiResponse<AnalyticsFinancialProfileV2Response>> getFinancialProfileV2() {
+
+        AnalyticsFinancialProfileV2Response response =
+                analyticsService.getFinancialProfileV2();
+
+        return ResponseBuilder.success(
+                "Financial profile retrieved successfully",
+                response
+        );
+    }
+
+    @GetMapping("/v2")
+    public ResponseEntity<ApiResponse<AnalyticsUnifiedV2Response>> getUnifiedV2() {
+
+        return ResponseBuilder.success(
+                "Unified V2 analytics retrieved successfully",
+                analyticsService.getUnifiedV2()
+        );
+    }
+
 }
