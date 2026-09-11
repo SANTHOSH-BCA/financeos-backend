@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.financeos.financeosbackend.analytics.dto.MonthlySummary;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;import java.time.LocalDate;
+import com.financeos.financeosbackend.analytics.dto.MonthlySummary;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;import java.time.LocalDate;import java.time.LocalDate;
 public interface IncomeRepository extends JpaRepository<Income, Long> {
 
     Page<Income> findByUser(User user, Pageable pageable);
@@ -40,6 +40,12 @@ public interface IncomeRepository extends JpaRepository<Income, Long> {
             @Param("user") User user,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
+    );
+
+    List<Income> findByUserAndIncomeDateBetween(
+            User user,
+            LocalDate startDate,
+            LocalDate endDate
     );
 
 

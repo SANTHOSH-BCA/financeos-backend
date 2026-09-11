@@ -14,6 +14,11 @@ public class GoalProgressResponse {
     private BigDecimal requiredMonthlyContribution;
     private String progressStatus;
 
+    private BigDecimal monthlyDebtPayment;
+    private BigDecimal availableAfterDebt;
+    private BigDecimal goalContributionGap;
+    private boolean debtImpactDetected;
+
     public GoalProgressResponse() {
     }
 
@@ -73,5 +78,45 @@ public class GoalProgressResponse {
 
     public String getProgressStatus() {
         return progressStatus;
+    }
+
+    public BigDecimal getMonthlyDebtPayment() {
+        return monthlyDebtPayment;
+    }
+
+    public void setMonthlyDebtPayment(
+            BigDecimal monthlyDebtPayment
+    ) {
+        this.monthlyDebtPayment = monthlyDebtPayment;
+    }
+
+    public BigDecimal getAvailableAfterDebt() {
+        return availableAfterDebt;
+    }
+
+    public void setAvailableAfterDebt(
+            BigDecimal availableAfterDebt
+    ) {
+        this.availableAfterDebt = availableAfterDebt;
+    }
+
+    public BigDecimal getGoalContributionGap() {
+        return goalContributionGap;
+    }
+
+    public void setGoalContributionGap(
+            BigDecimal goalContributionGap
+    ) {
+        this.goalContributionGap = goalContributionGap;
+    }
+
+    public boolean isDebtImpactDetected() {
+        return debtImpactDetected;
+    }
+
+    public void setDebtImpactDetected(
+            boolean debtImpactDetected
+    ) {
+        this.debtImpactDetected = debtImpactDetected;
     }
 }

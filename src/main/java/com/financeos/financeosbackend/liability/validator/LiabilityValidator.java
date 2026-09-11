@@ -11,18 +11,17 @@ public class LiabilityValidator {
 
     public void validateResponsibility(CreateLiabilityRequest request) {
 
-        ResponsibilityType responsibilityType =
-                request.getResponsibilityType();
+        ResponsibilityType responsibilityType = request.getResponsibilityType();
+        BigDecimal percentage = request.getResponsibilityPercentage();
 
-        BigDecimal percentage =
-                request.getResponsibilityPercentage();
+        if (responsibilityType == null) {
+            throw new IllegalArgumentException("Responsibility type is required");
+        }
 
         if (responsibilityType == ResponsibilityType.INDIVIDUAL) {
 
             if (percentage == null) {
-                request.setResponsibilityPercentage(
-                        BigDecimal.valueOf(100)
-                );
+                request.setResponsibilityPercentage(BigDecimal.valueOf(100));
                 return;
             }
 
@@ -54,7 +53,6 @@ public class LiabilityValidator {
         }
 
         if (responsibilityType == ResponsibilityType.FAMILY_UNCLEAR) {
-
             request.setResponsibilityPercentage(null);
         }
     }

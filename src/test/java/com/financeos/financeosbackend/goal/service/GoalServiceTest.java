@@ -6,6 +6,7 @@ import com.financeos.financeosbackend.goal.dto.AddGoalRequest;
 import com.financeos.financeosbackend.goal.dto.GoalResponse;
 import com.financeos.financeosbackend.goal.entity.Goal;
 import com.financeos.financeosbackend.goal.enums.GoalStatus;
+import com.financeos.financeosbackend.goal.repository.GoalContributionRepository;
 import com.financeos.financeosbackend.goal.repository.GoalRepository;
 import com.financeos.financeosbackend.user.entity.User;
 import com.financeos.financeosbackend.user.repository.UserRepository;
@@ -39,6 +40,15 @@ class GoalServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private GoalContributionRepository goalContributionRepository;
+
+    @Mock
+    private GoalDebtImpactService goalDebtImpactService;
+
+    @Mock
+    private GoalIncomeCapacityService goalIncomeCapacityService;
 
     @InjectMocks
     private GoalService goalService;
@@ -75,9 +85,18 @@ class GoalServiceTest {
 
         assertNotNull(response);
         assertEquals("Buy Bike", response.getGoalName());
-        assertEquals(new BigDecimal("100000"), response.getTargetAmount());
-        assertEquals(new BigDecimal("25000"), response.getCurrentAmount());
-        assertEquals(GoalStatus.ON_TRACK, response.getGoalStatus());
+        assertEquals(
+                new BigDecimal("100000"),
+                response.getTargetAmount()
+        );
+        assertEquals(
+                new BigDecimal("25000"),
+                response.getCurrentAmount()
+        );
+        assertEquals(
+                GoalStatus.ON_TRACK,
+                response.getGoalStatus()
+        );
 
         verify(currentUserService).getCurrentUser();
         verify(goalRepository).save(any(Goal.class));
@@ -96,11 +115,13 @@ class GoalServiceTest {
         IllegalArgumentException exception =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> goalService.addGoal(request));
+                        () -> goalService.addGoal(request)
+                );
 
         assertEquals(
                 "Target date cannot be in the past",
-                exception.getMessage());
+                exception.getMessage()
+        );
 
         verify(goalRepository, never()).save(any());
     }
@@ -126,25 +147,47 @@ class GoalServiceTest {
 
         when(goalRepository.findByUser(
                 eq(user),
-                any(PageRequest.class)))
-                .thenReturn(page);
+                any(PageRequest.class)
+        )).thenReturn(page);
 
         Page<GoalResponse> response =
                 goalService.getMyGoals(PageRequest.of(0, 5));
 
-        assertEquals(1, response.getTotalElements());
+        assertEquals(
+                1,
+                response.getTotalElements()
+        );
 
         GoalResponse first =
                 response.getContent().get(0);
 
-        assertEquals("Buy Bike", first.getGoalName());
-        assertEquals(new BigDecimal("100000"), first.getTargetAmount());
-        assertEquals(new BigDecimal("25000"), first.getCurrentAmount());
-        assertEquals(GoalStatus.ON_TRACK, first.getGoalStatus());
+        assertEquals(
+                "Buy Bike",
+                first.getGoalName()
+        );
+
+        assertEquals(
+                new BigDecimal("100000"),
+                first.getTargetAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("25000"),
+                first.getCurrentAmount()
+        );
+
+        assertEquals(
+                GoalStatus.ON_TRACK,
+                first.getGoalStatus()
+        );
 
         verify(currentUserService).getCurrentUser();
+
         verify(goalRepository)
-                .findByUser(eq(user), any(PageRequest.class));
+                .findByUser(
+                        eq(user),
+                        any(PageRequest.class)
+                );
     }
 
     @Test
@@ -181,17 +224,39 @@ class GoalServiceTest {
                 goalService.updateGoal(1L, request);
 
         assertNotNull(response);
-        assertEquals("Buy Car", response.getGoalName());
-        assertEquals(new BigDecimal("800000"), response.getTargetAmount());
-        assertEquals(new BigDecimal("100000"), response.getCurrentAmount());
+
+        assertEquals(
+                "Buy Car",
+                response.getGoalName()
+        );
+
+        assertEquals(
+                new BigDecimal("800000"),
+                response.getTargetAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("100000"),
+                response.getCurrentAmount()
+        );
+
         assertEquals(
                 LocalDate.now().plusYears(1),
-                response.getTargetDate());
-        assertEquals(GoalStatus.ON_TRACK, response.getGoalStatus());
+                response.getTargetDate()
+        );
+
+        assertEquals(
+                GoalStatus.ON_TRACK,
+                response.getGoalStatus()
+        );
 
         verify(currentUserService).getCurrentUser();
-        verify(goalRepository).findByIdAndUser(1L, user);
-        verify(goalRepository).save(any(Goal.class));
+
+        verify(goalRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(goalRepository)
+                .save(any(Goal.class));
     }
 
     @Test
@@ -216,13 +281,21 @@ class GoalServiceTest {
         ResourceNotFoundException exception =
                 assertThrows(
                         ResourceNotFoundException.class,
-                        () -> goalService.updateGoal(1L, request));
+                        () -> goalService.updateGoal(1L, request)
+                );
 
-        assertEquals("Goal not found", exception.getMessage());
+        assertEquals(
+                "Goal not found",
+                exception.getMessage()
+        );
 
         verify(currentUserService).getCurrentUser();
-        verify(goalRepository).findByIdAndUser(1L, user);
-        verify(goalRepository, never()).save(any());
+
+        verify(goalRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(goalRepository, never())
+                .save(any());
     }
 
     @Test
@@ -248,8 +321,12 @@ class GoalServiceTest {
         goalService.deleteGoal(1L);
 
         verify(currentUserService).getCurrentUser();
-        verify(goalRepository).findByIdAndUser(1L, user);
-        verify(goalRepository).delete(goal);
+
+        verify(goalRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(goalRepository)
+                .delete(goal);
     }
 
     @Test
@@ -267,13 +344,21 @@ class GoalServiceTest {
         ResourceNotFoundException exception =
                 assertThrows(
                         ResourceNotFoundException.class,
-                        () -> goalService.deleteGoal(1L));
+                        () -> goalService.deleteGoal(1L)
+                );
 
-        assertEquals("Goal not found", exception.getMessage());
+        assertEquals(
+                "Goal not found",
+                exception.getMessage()
+        );
 
         verify(currentUserService).getCurrentUser();
-        verify(goalRepository).findByIdAndUser(1L, user);
-        verify(goalRepository, never()).delete(any(Goal.class));
+
+        verify(goalRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(goalRepository, never())
+                .delete(any(Goal.class));
     }
 
     @Test
@@ -296,15 +381,77 @@ class GoalServiceTest {
         when(goalRepository.findByIdAndUser(1L, user))
                 .thenReturn(Optional.of(goal));
 
-        var response = goalService.getGoalProgress(1L);
+        when(goalDebtImpactService.getMonthlyDebtPayment())
+                .thenReturn(new BigDecimal("20000.00"));
+
+        when(goalIncomeCapacityService.getCurrentMonthIncome())
+                .thenReturn(new BigDecimal("55000.00"));
+
+        when(goalDebtImpactService.calculateAvailableAfterDebt(
+                new BigDecimal("55000.00")
+        )).thenReturn(new BigDecimal("35000.00"));
+
+        when(goalDebtImpactService.calculateContributionGap(
+                any(BigDecimal.class),
+                eq(new BigDecimal("35000.00"))
+        )).thenReturn(new BigDecimal("0.00"));
+
+        when(goalDebtImpactService.hasDebtImpact(
+                any(BigDecimal.class),
+                eq(new BigDecimal("35000.00"))
+        )).thenReturn(false);
+
+        var response =
+                goalService.getGoalProgress(1L);
 
         assertNotNull(response);
-        assertEquals(new BigDecimal("100000"), response.getTargetAmount());
-        assertEquals(new BigDecimal("25000"), response.getCurrentAmount());
-        assertEquals(new BigDecimal("75000"), response.getRemainingAmount());
 
-        verify(currentUserService).getCurrentUser();
-        verify(goalRepository).findByIdAndUser(1L, user);
+        assertEquals(
+                new BigDecimal("100000"),
+                response.getTargetAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("25000"),
+                response.getCurrentAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("75000"),
+                response.getRemainingAmount()
+        );
+
+        assertEquals(
+                new BigDecimal("20000.00"),
+                response.getMonthlyDebtPayment()
+        );
+
+        assertEquals(
+                new BigDecimal("35000.00"),
+                response.getAvailableAfterDebt()
+        );
+
+        assertNotNull(
+                response.getGoalContributionGap()
+        );
+
+        assertEquals(
+                response.getRequiredMonthlyContribution()
+                        .compareTo(new BigDecimal("35000.00")) > 0,
+                response.isDebtImpactDetected()
+        );
+
+        verify(currentUserService)
+                .getCurrentUser();
+
+        verify(goalRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(goalDebtImpactService)
+                .getMonthlyDebtPayment();
+
+        verify(goalIncomeCapacityService)
+                .getCurrentMonthIncome();
     }
 
     @Test
@@ -324,7 +471,20 @@ class GoalServiceTest {
                 () -> goalService.getGoalProgress(1L)
         );
 
-        verify(currentUserService).getCurrentUser();
-        verify(goalRepository).findByIdAndUser(1L, user);
+        verify(currentUserService)
+                .getCurrentUser();
+
+        verify(goalRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(
+                goalDebtImpactService,
+                never()
+        ).getMonthlyDebtPayment();
+
+        verify(
+                goalIncomeCapacityService,
+                never()
+        ).getCurrentMonthIncome();
     }
 }

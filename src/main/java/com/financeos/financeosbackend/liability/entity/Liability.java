@@ -1,6 +1,9 @@
 package com.financeos.financeosbackend.liability.entity;
 
+import com.financeos.financeosbackend.liability.enums.InterestType;
+import com.financeos.financeosbackend.liability.enums.LiabilityStatus;
 import com.financeos.financeosbackend.liability.enums.LiabilityType;
+import com.financeos.financeosbackend.liability.enums.PaymentFrequency;
 import com.financeos.financeosbackend.liability.enums.ResponsibilityType;
 import com.financeos.financeosbackend.user.entity.User;
 import jakarta.persistence.*;
@@ -31,6 +34,39 @@ public class Liability {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal outstandingAmount;
 
+    @Column(precision = 15, scale = 2)
+    private BigDecimal originalAmount;
+
+    @Column
+    private String lender;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal interestRate;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private InterestType interestType;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal paymentAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private PaymentFrequency paymentFrequency;
+
+    @Column
+    private LocalDate startDate;
+
+    @Column
+    private LocalDate endDate;
+
+    @Column
+    private LocalDate nextPaymentDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private LiabilityStatus status;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ResponsibilityType responsibilityType;
@@ -52,6 +88,10 @@ public class Liability {
         LocalDateTime now = LocalDateTime.now();
         createdAt = now;
         updatedAt = now;
+
+        if (status == null) {
+            status = LiabilityStatus.ACTIVE;
+        }
     }
 
     @PreUpdate
@@ -97,6 +137,86 @@ public class Liability {
 
     public void setOutstandingAmount(BigDecimal outstandingAmount) {
         this.outstandingAmount = outstandingAmount;
+    }
+
+    public BigDecimal getOriginalAmount() {
+        return originalAmount;
+    }
+
+    public void setOriginalAmount(BigDecimal originalAmount) {
+        this.originalAmount = originalAmount;
+    }
+
+    public String getLender() {
+        return lender;
+    }
+
+    public void setLender(String lender) {
+        this.lender = lender;
+    }
+
+    public BigDecimal getInterestRate() {
+        return interestRate;
+    }
+
+    public void setInterestRate(BigDecimal interestRate) {
+        this.interestRate = interestRate;
+    }
+
+    public InterestType getInterestType() {
+        return interestType;
+    }
+
+    public void setInterestType(InterestType interestType) {
+        this.interestType = interestType;
+    }
+
+    public BigDecimal getPaymentAmount() {
+        return paymentAmount;
+    }
+
+    public void setPaymentAmount(BigDecimal paymentAmount) {
+        this.paymentAmount = paymentAmount;
+    }
+
+    public PaymentFrequency getPaymentFrequency() {
+        return paymentFrequency;
+    }
+
+    public void setPaymentFrequency(PaymentFrequency paymentFrequency) {
+        this.paymentFrequency = paymentFrequency;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public LocalDate getNextPaymentDate() {
+        return nextPaymentDate;
+    }
+
+    public void setNextPaymentDate(LocalDate nextPaymentDate) {
+        this.nextPaymentDate = nextPaymentDate;
+    }
+
+    public LiabilityStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(LiabilityStatus status) {
+        this.status = status;
     }
 
     public ResponsibilityType getResponsibilityType() {

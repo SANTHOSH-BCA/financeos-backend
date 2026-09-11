@@ -20,7 +20,7 @@ import com.financeos.financeosbackend.goal.dto.GoalProgressResponse;import com.f
 import com.financeos.financeosbackend.goal.dto.GoalContributionResponse;
 import com.financeos.financeosbackend.goal.entity.GoalContribution;import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
 import com.financeos.financeosbackend.transaction.enums.TransactionType;
-import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;import com.financeos.financeosbackend.goal.dto.GoalPerformanceResponse;
+import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;import com.financeos.financeosbackend.goal.dto.GoalPerformanceResponse;import java.math.RoundingMode;
 
 @Service
 public class GoalService {
@@ -32,17 +32,23 @@ public class GoalService {
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final GoalContributionRepository goalContributionRepository;
+    private final GoalDebtImpactService goalDebtImpactService;
+    private final GoalIncomeCapacityService goalIncomeCapacityService;
 
     public GoalService(
             GoalRepository goalRepository,
             UserRepository userRepository,
             CurrentUserService currentUserService,
-            GoalContributionRepository goalContributionRepository) {
+            GoalContributionRepository goalContributionRepository,
+            GoalDebtImpactService goalDebtImpactService,
+            GoalIncomeCapacityService goalIncomeCapacityService) {
 
         this.goalRepository = goalRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.goalContributionRepository = goalContributionRepository;
+        this.goalDebtImpactService = goalDebtImpactService;
+        this.goalIncomeCapacityService = goalIncomeCapacityService;
     }
 
     public GoalResponse addGoal(AddGoalRequest request) {
@@ -219,17 +225,49 @@ public class GoalService {
                             : GoalStatus.AT_RISK;
         }
 
-        return new GoalProgressResponse(
-                goal.getId(),
-                goal.getGoalName(),
-                target,
-                current,
-                remaining,
-                progressPercentage,
-                daysRemaining,
-                requiredMonthlyContribution,
-                progressStatus.name()
-        );
+        GoalProgressResponse response =
+                new GoalProgressResponse(
+                        goal.getId(),
+                        goal.getGoalName(),
+                        target,
+                        current,
+                        remaining,
+                        progressPercentage,
+                        daysRemaining,
+                        requiredMonthlyContribution,
+                        progressStatus.name()
+                );
+
+        BigDecimal monthlyDebtPayment =
+                goalDebtImpactService.getMonthlyDebtPayment();
+
+        response.setMonthlyDebtPayment(monthlyDebtPayment);
+
+        BigDecimal monthlyIncome =
+                goalIncomeCapacityService.getCurrentMonthIncome();
+
+        BigDecimal availableAfterDebt =
+                goalDebtImpactService.calculateAvailableAfterDebt(
+                        monthlyIncome
+                );
+
+        BigDecimal goalContributionGap =
+                goalDebtImpactService.calculateContributionGap(
+                        requiredMonthlyContribution,
+                        availableAfterDebt
+                );
+
+        boolean debtImpactDetected =
+                goalDebtImpactService.hasDebtImpact(
+                        requiredMonthlyContribution,
+                        availableAfterDebt
+                );
+
+        response.setAvailableAfterDebt(availableAfterDebt);
+        response.setGoalContributionGap(goalContributionGap);
+        response.setDebtImpactDetected(debtImpactDetected);
+
+        return response;
     }
 
     public GoalContributionResponse addContribution(

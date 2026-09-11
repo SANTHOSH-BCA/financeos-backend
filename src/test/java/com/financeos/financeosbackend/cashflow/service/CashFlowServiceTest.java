@@ -3,6 +3,8 @@ package com.financeos.financeosbackend.cashflow.service;
 import com.financeos.financeosbackend.common.service.CurrentUserService;
 import com.financeos.financeosbackend.expense.repository.ExpenseRepository;
 import com.financeos.financeosbackend.income.repository.IncomeRepository;
+import com.financeos.financeosbackend.liability.dto.DebtBurdenResponse;
+import com.financeos.financeosbackend.liability.service.DebtBurdenService;
 import com.financeos.financeosbackend.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -28,6 +29,9 @@ class CashFlowServiceTest {
     @Mock
     private CurrentUserService currentUserService;
 
+    @Mock
+    private DebtBurdenService debtBurdenService;
+
     private CashFlowService cashFlowService;
 
     private User user;
@@ -38,7 +42,8 @@ class CashFlowServiceTest {
         cashFlowService = new CashFlowService(
                 incomeRepository,
                 expenseRepository,
-                currentUserService
+                currentUserService,
+                debtBurdenService
         );
 
         user = new User();
@@ -64,7 +69,7 @@ class CashFlowServiceTest {
     }
 
     @Test
-    void calculateOutflows_ShouldReturnTotalExpense() {
+    void calculateExpenseOutflows_ShouldReturnTotalExpense() {
 
         when(currentUserService.getCurrentUser())
                 .thenReturn(user);
@@ -73,7 +78,7 @@ class CashFlowServiceTest {
                 .thenReturn(new BigDecimal("7800.00"));
 
         BigDecimal result =
-                cashFlowService.calculateOutflows();
+                cashFlowService.calculateExpenseOutflows();
 
         assertEquals(
                 0,
@@ -82,7 +87,57 @@ class CashFlowServiceTest {
     }
 
     @Test
-    void calculateNetCashFlow_ShouldSubtractOutflowsFromInflows() {
+    void calculateDebtPaymentOutflows_ShouldReturnMonthlyDebtPayments() {
+
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                new BigDecimal("20000.00")
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
+
+        BigDecimal result =
+                cashFlowService.calculateDebtPaymentOutflows();
+
+        assertEquals(
+                0,
+                new BigDecimal("20000.00").compareTo(result)
+        );
+    }
+
+    @Test
+    void calculateOutflows_ShouldIncludeExpensesAndDebtPayments() {
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(expenseRepository.getTotalExpenseByUser(user))
+                .thenReturn(new BigDecimal("7800.00"));
+
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                new BigDecimal("20000.00")
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
+
+        BigDecimal result =
+                cashFlowService.calculateOutflows();
+
+        assertEquals(
+                0,
+                new BigDecimal("27800.00").compareTo(result)
+        );
+    }
+
+    @Test
+    void calculateNetCashFlow_ShouldSubtractExpensesAndDebtPayments() {
 
         when(currentUserService.getCurrentUser())
                 .thenReturn(user);
@@ -93,12 +148,22 @@ class CashFlowServiceTest {
         when(expenseRepository.getTotalExpenseByUser(user))
                 .thenReturn(new BigDecimal("7800.00"));
 
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                new BigDecimal("20000.00")
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
+
         BigDecimal result =
                 cashFlowService.calculateNetCashFlow();
 
         assertEquals(
                 0,
-                new BigDecimal("47200.00").compareTo(result)
+                new BigDecimal("27200.00").compareTo(result)
         );
     }
 
@@ -114,17 +179,27 @@ class CashFlowServiceTest {
         when(expenseRepository.getTotalExpenseByUser(user))
                 .thenReturn(new BigDecimal("7800.00"));
 
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                new BigDecimal("20000.00")
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
+
         BigDecimal result =
                 cashFlowService.calculateSavings();
 
         assertEquals(
                 0,
-                new BigDecimal("47200.00").compareTo(result)
+                new BigDecimal("27200.00").compareTo(result)
         );
     }
 
     @Test
-    void calculateSavingsRate_ShouldCalculatePercentage() {
+    void calculateSavingsRate_ShouldIncludeDebtPayments() {
 
         when(currentUserService.getCurrentUser())
                 .thenReturn(user);
@@ -135,12 +210,22 @@ class CashFlowServiceTest {
         when(expenseRepository.getTotalExpenseByUser(user))
                 .thenReturn(new BigDecimal("7800.00"));
 
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                new BigDecimal("20000.00")
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
+
         BigDecimal result =
                 cashFlowService.calculateSavingsRate();
 
         assertEquals(
                 0,
-                new BigDecimal("85.82").compareTo(result)
+                new BigDecimal("49.45").compareTo(result)
         );
     }
 
@@ -155,6 +240,16 @@ class CashFlowServiceTest {
 
         when(expenseRepository.getTotalExpenseByUser(user))
                 .thenReturn(BigDecimal.ZERO);
+
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                BigDecimal.ZERO
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
 
         BigDecimal result =
                 cashFlowService.calculateSavingsRate();
@@ -184,7 +279,7 @@ class CashFlowServiceTest {
     }
 
     @Test
-    void calculateIncludedOutflows_ShouldMatchOutflows() {
+    void calculateIncludedOutflows_ShouldIncludeDebtPayments() {
 
         when(currentUserService.getCurrentUser())
                 .thenReturn(user);
@@ -192,12 +287,22 @@ class CashFlowServiceTest {
         when(expenseRepository.getTotalExpenseByUser(user))
                 .thenReturn(new BigDecimal("7800.00"));
 
+        DebtBurdenResponse debtBurdenResponse =
+                new DebtBurdenResponse();
+
+        debtBurdenResponse.setTotalMonthlyPayment(
+                new BigDecimal("20000.00")
+        );
+
+        when(debtBurdenService.getMyDebtBurden())
+                .thenReturn(debtBurdenResponse);
+
         BigDecimal result =
                 cashFlowService.calculateIncludedOutflows();
 
         assertEquals(
                 0,
-                new BigDecimal("7800.00").compareTo(result)
+                new BigDecimal("27800.00").compareTo(result)
         );
     }
 }
