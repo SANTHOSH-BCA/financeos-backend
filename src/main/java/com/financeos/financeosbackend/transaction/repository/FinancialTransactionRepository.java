@@ -97,4 +97,10 @@ public interface FinancialTransactionRepository
             @Param("endTime") LocalDateTime endTime,
             @Param("status") TransactionStatus status
     );
+
+    List<FinancialTransaction> findByUserAndTransactionDateTimeBetween(
+            User user,
+            LocalDateTime startTime,
+            LocalDateTime endTime
+    );
 }
