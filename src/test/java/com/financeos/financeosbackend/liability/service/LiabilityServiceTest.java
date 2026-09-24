@@ -10,6 +10,7 @@ import com.financeos.financeosbackend.liability.enums.ResponsibilityType;
 import com.financeos.financeosbackend.liability.mapper.LiabilityMapper;
 import com.financeos.financeosbackend.liability.repository.LiabilityRepository;
 import com.financeos.financeosbackend.liability.validator.LiabilityValidator;
+import com.financeos.financeosbackend.notification.integration.liability.LiabilityNotificationService;
 import com.financeos.financeosbackend.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,8 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +44,9 @@ class LiabilityServiceTest {
     @Mock
     private LiabilityValidator liabilityValidator;
 
+    @Mock
+    private LiabilityNotificationService liabilityNotificationService;
+
     @InjectMocks
     private LiabilityService liabilityService;
 
@@ -48,6 +54,7 @@ class LiabilityServiceTest {
     void createLiability_ShouldCreateSuccessfully() {
 
         User user = new User();
+        user.setId(1L);
         user.setEmail("santhosh@gmail.com");
 
         CreateLiabilityRequest request = new CreateLiabilityRequest();
@@ -60,7 +67,10 @@ class LiabilityServiceTest {
         request.setValuationDate(LocalDate.now());
 
         Liability liability = new Liability();
+
         Liability savedLiability = new Liability();
+        savedLiability.setId(10L);
+        savedLiability.setLiabilityName("Home Loan");
 
         LiabilityResponse response = new LiabilityResponse();
         response.setId(1L);
@@ -85,11 +95,28 @@ class LiabilityServiceTest {
         assertEquals(1L, result.getId());
         assertEquals("Home Loan", result.getLiabilityName());
 
-        verify(liabilityValidator).validateResponsibility(request);
-        verify(currentUserService).getCurrentUser();
-        verify(liabilityMapper).toEntity(request);
-        verify(liabilityRepository).save(liability);
-        verify(liabilityMapper).toResponse(savedLiability);
+        verify(liabilityValidator)
+                .validateResponsibility(request);
+
+        verify(currentUserService)
+                .getCurrentUser();
+
+        verify(liabilityMapper)
+                .toEntity(request);
+
+        verify(liabilityRepository)
+                .save(liability);
+
+        verify(liabilityNotificationService)
+                .paymentDue(
+                        eq(1L),
+                        eq(10L),
+                        eq("Home Loan"),
+                        anyString()
+                );
+
+        verify(liabilityMapper)
+                .toResponse(savedLiability);
     }
 
     @Test
@@ -124,9 +151,14 @@ class LiabilityServiceTest {
                 result.get(0).getLiabilityName()
         );
 
-        verify(currentUserService).getCurrentUser();
-        verify(liabilityRepository).findAllByUser(user);
-        verify(liabilityMapper).toResponse(liability);
+        verify(currentUserService)
+                .getCurrentUser();
+
+        verify(liabilityRepository)
+                .findAllByUser(user);
+
+        verify(liabilityMapper)
+                .toResponse(liability);
     }
 
     @Test
@@ -160,9 +192,14 @@ class LiabilityServiceTest {
                 result.getLiabilityName()
         );
 
-        verify(currentUserService).getCurrentUser();
-        verify(liabilityRepository).findByIdAndUser(1L, user);
-        verify(liabilityMapper).toResponse(liability);
+        verify(currentUserService)
+                .getCurrentUser();
+
+        verify(liabilityRepository)
+                .findByIdAndUser(1L, user);
+
+        verify(liabilityMapper)
+                .toResponse(liability);
     }
 
     @Test
@@ -188,11 +225,21 @@ class LiabilityServiceTest {
                 exception.getMessage()
         );
 
-        verify(currentUserService).getCurrentUser();
+        verify(currentUserService)
+                .getCurrentUser();
+
         verify(liabilityRepository)
                 .findByIdAndUser(999L, user);
 
         verify(liabilityMapper, never())
                 .toResponse(any());
+
+        verify(liabilityNotificationService, never())
+                .paymentDue(
+                        any(),
+                        any(),
+                        anyString(),
+                        anyString()
+                );
     }
 }

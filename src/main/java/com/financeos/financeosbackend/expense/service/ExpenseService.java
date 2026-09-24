@@ -1,34 +1,34 @@
 package com.financeos.financeosbackend.expense.service;
 
+import com.financeos.financeosbackend.common.service.CurrentUserService;
+import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import com.financeos.financeosbackend.expense.dto.AddExpenseRequest;
+import com.financeos.financeosbackend.expense.dto.ExpenseFilterRequest;
 import com.financeos.financeosbackend.expense.dto.ExpenseResponse;
+import com.financeos.financeosbackend.expense.dto.MonthlyExpenseResponse;
 import com.financeos.financeosbackend.expense.entity.Expense;
 import com.financeos.financeosbackend.expense.repository.ExpenseRepository;
+import com.financeos.financeosbackend.expense.specification.ExpenseSpecification;
+import com.financeos.financeosbackend.notification.integration.expense.ExpenseNotificationService;
+import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
+import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
+import com.financeos.financeosbackend.transaction.enums.TransactionType;
+import com.financeos.financeosbackend.user.entity.User;
 import com.financeos.financeosbackend.user.repository.UserRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import com.financeos.financeosbackend.common.service.CurrentUserService;
-import org.springframework.stereotype.Service;
-import com.financeos.financeosbackend.user.entity.User;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import com.financeos.financeosbackend.exception.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.financeos.financeosbackend.expense.specification.ExpenseSpecification;
 import org.springframework.data.jpa.domain.Specification;
-import com.financeos.financeosbackend.expense.dto.ExpenseFilterRequest;
-import java.time.LocalDate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
-import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
-import com.financeos.financeosbackend.transaction.enums.TransactionType;import com.financeos.financeosbackend.expense.dto.MonthlyExpenseResponse;import java.time.YearMonth;
-import java.util.Map;
-import java.util.stream.Collectors;import com.financeos.financeosbackend.expense.dto.MonthlyExpenseResponse;
+import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,13 +40,18 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
-    public ExpenseService(ExpenseRepository expenseRepository,
-                          UserRepository userRepository,
-                          CurrentUserService currentUserService) {
+    private final ExpenseNotificationService expenseNotificationService;
+
+    public ExpenseService(
+            ExpenseRepository expenseRepository,
+            UserRepository userRepository,
+            CurrentUserService currentUserService,
+            ExpenseNotificationService expenseNotificationService) {
 
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
+        this.expenseNotificationService = expenseNotificationService;
     }
 
     public ExpenseResponse addExpense(AddExpenseRequest request) {
@@ -79,6 +84,13 @@ public class ExpenseService {
                 savedExpense.getId()
         );
 
+        // Notification integration
+        expenseNotificationService.expenseRequiresAttention(
+                user.getId(),
+                savedExpense.getId(),
+                "Your expense " + savedExpense.getTitle() + " was added."
+        );
+
         return mapToResponse(savedExpense);
     }
 
@@ -90,13 +102,19 @@ public class ExpenseService {
                 .map(this::mapToResponse);
     }
 
-    public ExpenseResponse updateExpense(Long id, AddExpenseRequest request) {
+    public ExpenseResponse updateExpense(
+            Long id,
+            AddExpenseRequest request) {
 
         validateExpenseDate(request.getExpenseDate());
 
         User user = currentUserService.getCurrentUser();
 
-        logger.info("Updating expense with ID: {} for user: {}", id, user.getEmail());
+        logger.info(
+                "Updating expense with ID: {} for user: {}",
+                id,
+                user.getEmail()
+        );
 
         Optional<Expense> optionalExpense =
                 expenseRepository.findByIdAndUser(id, user);
@@ -114,7 +132,17 @@ public class ExpenseService {
 
         Expense updatedExpense = expenseRepository.save(expense);
 
-        logger.info("Expense updated successfully with ID: {}", updatedExpense.getId());
+        logger.info(
+                "Expense updated successfully with ID: {}",
+                updatedExpense.getId()
+        );
+
+        // Notification integration
+        expenseNotificationService.expenseRequiresAttention(
+                user.getId(),
+                updatedExpense.getId(),
+                "Your expense " + updatedExpense.getTitle() + " was updated."
+        );
 
         return mapToResponse(updatedExpense);
     }
@@ -123,7 +151,11 @@ public class ExpenseService {
 
         User user = currentUserService.getCurrentUser();
 
-        logger.info("Deleting expense with ID: {} for user: {}", id, user.getEmail());
+        logger.info(
+                "Deleting expense with ID: {} for user: {}",
+                id,
+                user.getEmail()
+        );
 
         Optional<Expense> optionalExpense =
                 expenseRepository.findByIdAndUser(id, user);
@@ -134,13 +166,15 @@ public class ExpenseService {
 
         expenseRepository.delete(optionalExpense.get());
 
-        logger.info("Expense deleted successfully with ID: {}", id);
-
-
+        logger.info(
+                "Expense deleted successfully with ID: {}",
+                id
+        );
     }
 
-    public Page<ExpenseResponse> filterExpenses(ExpenseFilterRequest request,
-                                                Pageable pageable) {
+    public Page<ExpenseResponse> filterExpenses(
+            ExpenseFilterRequest request,
+            Pageable pageable) {
 
         User user = currentUserService.getCurrentUser();
 
@@ -327,7 +361,5 @@ public class ExpenseService {
 
         return mapToResponse(savedExpense);
     }
-
-
 
 }

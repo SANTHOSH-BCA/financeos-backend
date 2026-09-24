@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import com.financeos.financeosbackend.notification.integration.expense.ExpenseNotificationService;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -40,6 +41,9 @@ class ExpenseServiceTest {
 
     @Mock
     private CurrentUserService currentUserService;
+
+    @Mock
+    private ExpenseNotificationService expenseNotificationService;
 
     @InjectMocks
     private ExpenseService expenseService;
@@ -80,6 +84,44 @@ class ExpenseServiceTest {
 
         verify(currentUserService).getCurrentUser();
         verify(expenseRepository).save(any(Expense.class));
+    }
+
+    @Test
+    void addExpense_ShouldTriggerExpenseNotification() {
+
+        AddExpenseRequest request = new AddExpenseRequest();
+        request.setTitle("Food");
+        request.setAmount(new BigDecimal("500"));
+        request.setCategory("Food");
+        request.setExpenseDate(LocalDate.now());
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("santhosh@gmail.com");
+
+        Expense savedExpense = new Expense();
+        savedExpense.setTitle("Food");
+        savedExpense.setAmount(new BigDecimal("500"));
+        savedExpense.setCategory("Food");
+        savedExpense.setExpenseDate(LocalDate.now());
+        savedExpense.setUser(user);
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(expenseRepository.save(any(Expense.class)))
+                .thenReturn(savedExpense);
+
+        ExpenseResponse response =
+                expenseService.addExpense(request);
+
+        assertNotNull(response);
+
+        verify(expenseNotificationService).expenseRequiresAttention(
+                eq(1L),
+                any(),
+                any(String.class)
+        );
     }
 
     @Test
@@ -183,6 +225,44 @@ class ExpenseServiceTest {
         verify(currentUserService).getCurrentUser();
         verify(expenseRepository).findByIdAndUser(1L, user);
         verify(expenseRepository).save(any(Expense.class));
+    }
+
+    @Test
+    void updateExpense_ShouldTriggerExpenseNotification() {
+
+        AddExpenseRequest request = new AddExpenseRequest();
+        request.setTitle("Rent");
+        request.setAmount(new BigDecimal("12000"));
+        request.setCategory("Housing");
+        request.setExpenseDate(LocalDate.now());
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("santhosh@gmail.com");
+
+        Expense expense = new Expense();
+        expense.setTitle("Food");
+        expense.setAmount(new BigDecimal("500"));
+        expense.setCategory("Food");
+        expense.setExpenseDate(LocalDate.now().minusDays(1));
+        expense.setUser(user);
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(expenseRepository.findByIdAndUser(1L, user))
+                .thenReturn(Optional.of(expense));
+
+        when(expenseRepository.save(any(Expense.class)))
+                .thenReturn(expense);
+
+        expenseService.updateExpense(1L, request);
+
+        verify(expenseNotificationService).expenseRequiresAttention(
+                eq(1L),
+                any(),
+                any(String.class)
+        );
     }
 
     @Test

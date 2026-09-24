@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-
+import com.financeos.financeosbackend.notification.integration.investment.InvestmentNotificationService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -25,7 +25,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;import com.financeos.financeosbackend.networth.service.NetWorthService;import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;import org.springframework.data.domain.Pageable;
+import static org.mockito.Mockito.*;import com.financeos.financeosbackend.networth.service.NetWorthService;import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;import org.springframework.data.domain.Pageable;import com.financeos.financeosbackend.networth.service.NetWorthService;
+
 
 @ExtendWith(MockitoExtension.class)
 class InvestmentServiceTest {
@@ -41,6 +42,9 @@ class InvestmentServiceTest {
 
     @Mock
     private NetWorthService netWorthService;
+
+    @Mock
+    private InvestmentNotificationService investmentNotificationService;
 
     @InjectMocks
     private InvestmentService investmentService;
@@ -81,6 +85,45 @@ class InvestmentServiceTest {
 
         verify(currentUserService).getCurrentUser();
         verify(investmentRepository).save(any(Investment.class));
+    }
+
+    @Test
+    void addInvestment_ShouldTriggerInvestmentNotification() {
+
+        AddInvestmentRequest request = new AddInvestmentRequest();
+        request.setInvestmentName("Mutual Fund");
+        request.setInvestmentType("SIP");
+        request.setAmount(new BigDecimal("5000"));
+        request.setInvestmentDate(LocalDate.now());
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("santhosh@gmail.com");
+
+        Investment investment = new Investment();
+        investment.setInvestmentName("Mutual Fund");
+        investment.setInvestmentType("SIP");
+        investment.setAmount(new BigDecimal("5000"));
+        investment.setInvestmentDate(LocalDate.now());
+        investment.setUser(user);
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.save(any(Investment.class)))
+                .thenReturn(investment);
+
+        InvestmentResponse response =
+                investmentService.addInvestment(request);
+
+        assertNotNull(response);
+
+        verify(investmentNotificationService).investmentUpdated(
+                eq(1L),
+                any(),
+                eq("Mutual Fund"),
+                eq("Your investment Mutual Fund was added.")
+        );
     }
 
     @Test
@@ -184,6 +227,45 @@ class InvestmentServiceTest {
         verify(currentUserService).getCurrentUser();
         verify(investmentRepository).findByIdAndUser(1L, user);
         verify(investmentRepository).save(any(Investment.class));
+    }
+
+    @Test
+    void updateInvestment_ShouldTriggerInvestmentNotification() {
+
+        AddInvestmentRequest request = new AddInvestmentRequest();
+        request.setInvestmentName("Stocks");
+        request.setInvestmentType("Equity");
+        request.setAmount(new BigDecimal("25000"));
+        request.setInvestmentDate(LocalDate.now());
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("santhosh@gmail.com");
+
+        Investment investment = new Investment();
+        investment.setInvestmentName("Mutual Fund");
+        investment.setInvestmentType("SIP");
+        investment.setAmount(new BigDecimal("5000"));
+        investment.setInvestmentDate(LocalDate.now());
+        investment.setUser(user);
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(investmentRepository.findByIdAndUser(1L, user))
+                .thenReturn(Optional.of(investment));
+
+        when(investmentRepository.save(any(Investment.class)))
+                .thenReturn(investment);
+
+        investmentService.updateInvestment(1L, request);
+
+        verify(investmentNotificationService).investmentUpdated(
+                eq(1L),
+                any(),
+                eq("Stocks"),
+                eq("Your investment Stocks was updated.")
+        );
     }
 
     @Test

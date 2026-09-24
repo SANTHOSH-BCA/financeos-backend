@@ -20,7 +20,8 @@ import com.financeos.financeosbackend.goal.dto.GoalProgressResponse;import com.f
 import com.financeos.financeosbackend.goal.dto.GoalContributionResponse;
 import com.financeos.financeosbackend.goal.entity.GoalContribution;import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
 import com.financeos.financeosbackend.transaction.enums.TransactionType;
-import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;import com.financeos.financeosbackend.goal.dto.GoalPerformanceResponse;import java.math.RoundingMode;
+import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;import com.financeos.financeosbackend.goal.dto.GoalPerformanceResponse;
+import com.financeos.financeosbackend.notification.integration.goal.GoalNotificationService;import java.math.RoundingMode;
 
 @Service
 public class GoalService {
@@ -34,6 +35,7 @@ public class GoalService {
     private final GoalContributionRepository goalContributionRepository;
     private final GoalDebtImpactService goalDebtImpactService;
     private final GoalIncomeCapacityService goalIncomeCapacityService;
+    private final GoalNotificationService goalNotificationService;
 
     public GoalService(
             GoalRepository goalRepository,
@@ -41,7 +43,8 @@ public class GoalService {
             CurrentUserService currentUserService,
             GoalContributionRepository goalContributionRepository,
             GoalDebtImpactService goalDebtImpactService,
-            GoalIncomeCapacityService goalIncomeCapacityService) {
+            GoalIncomeCapacityService goalIncomeCapacityService,
+            GoalNotificationService goalNotificationService) {
 
         this.goalRepository = goalRepository;
         this.userRepository = userRepository;
@@ -49,6 +52,7 @@ public class GoalService {
         this.goalContributionRepository = goalContributionRepository;
         this.goalDebtImpactService = goalDebtImpactService;
         this.goalIncomeCapacityService = goalIncomeCapacityService;
+        this.goalNotificationService = goalNotificationService;
     }
 
     public GoalResponse addGoal(AddGoalRequest request) {
@@ -311,6 +315,8 @@ public class GoalService {
 
         goalRepository.save(goal);
 
+        notifyGoalProgressChanged(goal);
+
         return new GoalContributionResponse(
                 saved.getId(),
                 goal.getId(),
@@ -320,6 +326,97 @@ public class GoalService {
         );
     }
 
+    private void notifyGoalProgressChanged(Goal goal) {
+
+        BigDecimal target = goal.getTargetAmount();
+        BigDecimal current = goal.getCurrentAmount();
+
+        if (target == null || current == null || target.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+
+        BigDecimal progressPercentage =
+                current.divide(
+                        target,
+                        6,
+                        RoundingMode.HALF_UP
+                ).multiply(BigDecimal.valueOf(100));
+
+        GoalStatus progressStatus;
+
+        long daysRemaining =
+                java.time.temporal.ChronoUnit.DAYS.between(
+                        LocalDate.now(),
+                        goal.getTargetDate()
+                );
+
+        if (current.compareTo(target) >= 0) {
+
+            progressStatus = GoalStatus.COMPLETED;
+
+        } else if (daysRemaining <= 0) {
+
+            progressStatus = GoalStatus.AT_RISK;
+
+        } else {
+
+            BigDecimal progressRatio =
+                    current.divide(
+                            target,
+                            6,
+                            RoundingMode.HALF_UP
+                    );
+
+            long totalDays =
+                    java.time.temporal.ChronoUnit.DAYS.between(
+                            goal.getTargetDate().minusDays(daysRemaining),
+                            goal.getTargetDate()
+                    );
+
+            BigDecimal expectedProgress = BigDecimal.ZERO;
+
+            if (totalDays > 0) {
+
+                long elapsedDays = totalDays - daysRemaining;
+
+                expectedProgress =
+                        BigDecimal.valueOf(elapsedDays)
+                                .divide(
+                                        BigDecimal.valueOf(totalDays),
+                                        6,
+                                        RoundingMode.HALF_UP
+                                );
+            }
+
+            progressStatus =
+                    progressRatio.compareTo(expectedProgress) >= 0
+                            ? GoalStatus.ON_TRACK
+                            : GoalStatus.AT_RISK;
+        }
+
+        String message =
+                String.format(
+                        "Your %s goal is now %.2f%% complete.",
+                        goal.getGoalName(),
+                        progressPercentage
+                );
+
+        goalNotificationService.goalProgressChanged(
+                goal.getUser().getId(),
+                goal.getId(),
+                goal.getGoalName(),
+                message
+        );
+
+        if (progressStatus == GoalStatus.AT_RISK) {
+
+            goalNotificationService.goalFallingBehind(
+                    goal.getUser().getId(),
+                    goal.getId(),
+                    goal.getGoalName()
+            );
+        }
+    }
     public List<GoalContributionResponse> getContributions(Long goalId) {
 
         User user = currentUserService.getCurrentUser();
@@ -391,6 +488,8 @@ public class GoalService {
         );
 
         goalRepository.save(goal);
+
+        notifyGoalProgressChanged(goal);
 
         return new GoalContributionResponse(
                 saved.getId(),
@@ -495,3 +594,8 @@ public class GoalService {
         return response;
     }
 }
+
+
+
+
+

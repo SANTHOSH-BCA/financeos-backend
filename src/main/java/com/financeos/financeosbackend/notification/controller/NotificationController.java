@@ -1,6 +1,7 @@
 package com.financeos.financeosbackend.notification.controller;
 
 import com.financeos.financeosbackend.common.dto.ApiResponse;
+import com.financeos.financeosbackend.common.service.CurrentUserService;
 import com.financeos.financeosbackend.notification.dto.NotificationPageResponse;
 import com.financeos.financeosbackend.notification.enums.NotificationStatus;
 import com.financeos.financeosbackend.notification.management.NotificationManagementResult;
@@ -19,10 +20,11 @@ public class NotificationController {
     private final NotificationManagementService
             managementService;
 
+    private final CurrentUserService currentUserService;
+
     @GetMapping
     public ResponseEntity<ApiResponse<NotificationPageResponse>>
     getNotifications(
-            @RequestParam Long userId,
             @RequestParam(required = false)
             NotificationStatus status,
             @RequestParam(defaultValue = "0")
@@ -30,6 +32,9 @@ public class NotificationController {
             @RequestParam(defaultValue = "20")
             int size
     ) {
+
+        Long userId =
+                currentUserService.getCurrentUser().getId();
 
         NotificationPageResponse response =
                 queryService.getNotifications(
@@ -50,9 +55,10 @@ public class NotificationController {
 
     @GetMapping("/unread/count")
     public ResponseEntity<ApiResponse<Long>>
-    getUnreadCount(
-            @RequestParam Long userId
-    ) {
+    getUnreadCount() {
+
+        Long userId =
+                currentUserService.getCurrentUser().getId();
 
         long count =
                 queryService.getUnreadCount(userId);
@@ -69,9 +75,11 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<ApiResponse<NotificationManagementResult>>
     markAsRead(
-            @PathVariable Long notificationId,
-            @RequestParam Long userId
+            @PathVariable Long notificationId
     ) {
+
+        Long userId =
+                currentUserService.getCurrentUser().getId();
 
         NotificationManagementResult result =
                 managementService.markAsRead(
@@ -91,9 +99,11 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/action")
     public ResponseEntity<ApiResponse<NotificationManagementResult>>
     markAsActioned(
-            @PathVariable Long notificationId,
-            @RequestParam Long userId
+            @PathVariable Long notificationId
     ) {
+
+        Long userId =
+                currentUserService.getCurrentUser().getId();
 
         NotificationManagementResult result =
                 managementService.markAsActioned(
@@ -113,9 +123,11 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/dismiss")
     public ResponseEntity<ApiResponse<NotificationManagementResult>>
     dismiss(
-            @PathVariable Long notificationId,
-            @RequestParam Long userId
+            @PathVariable Long notificationId
     ) {
+
+        Long userId =
+                currentUserService.getCurrentUser().getId();
 
         NotificationManagementResult result =
                 managementService.dismiss(

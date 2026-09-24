@@ -4,12 +4,14 @@ import com.financeos.financeosbackend.common.service.CurrentUserService;
 import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import com.financeos.financeosbackend.goal.dto.AddGoalRequest;
 import com.financeos.financeosbackend.goal.dto.GoalResponse;
+import com.financeos.financeosbackend.goal.dto.GoalContributionResponse;
 import com.financeos.financeosbackend.goal.entity.Goal;
 import com.financeos.financeosbackend.goal.enums.GoalStatus;
 import com.financeos.financeosbackend.goal.repository.GoalContributionRepository;
 import com.financeos.financeosbackend.goal.repository.GoalRepository;
 import com.financeos.financeosbackend.user.entity.User;
 import com.financeos.financeosbackend.user.repository.UserRepository;
+import com.financeos.financeosbackend.notification.integration.goal.GoalNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,6 +51,9 @@ class GoalServiceTest {
 
     @Mock
     private GoalIncomeCapacityService goalIncomeCapacityService;
+
+    @Mock
+    private GoalNotificationService goalNotificationService;
 
     @InjectMocks
     private GoalService goalService;
@@ -487,4 +492,58 @@ class GoalServiceTest {
                 never()
         ).getCurrentMonthIncome();
     }
+
+
+    @Test
+    void addContribution_ShouldTriggerGoalProgressNotification() {
+
+        User user = new User();
+        user.setId(1L);
+        user.setEmail("santhosh@gmail.com");
+
+        Goal goal = new Goal();
+        goal.setGoalName("Buy Bike");
+        goal.setTargetAmount(new BigDecimal("100000"));
+        goal.setCurrentAmount(new BigDecimal("25000"));
+        goal.setTargetDate(LocalDate.now().plusMonths(6));
+        goal.setGoalStatus(GoalStatus.ON_TRACK);
+        goal.setUser(user);
+
+        when(currentUserService.getCurrentUser())
+                .thenReturn(user);
+
+        when(goalRepository.findByIdAndUser(10L, user))
+                .thenReturn(Optional.of(goal));
+
+        when(goalContributionRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(goalRepository.save(any(Goal.class)))
+                .thenReturn(goal);
+
+        GoalContributionResponse response =
+                goalService.addContribution(
+                        10L,
+                        new BigDecimal("10000"),
+                        LocalDate.now()
+                );
+
+        assertNotNull(response);
+
+        assertEquals(
+                new BigDecimal("35000"),
+                goal.getCurrentAmount()
+        );
+
+        verify(goalRepository).save(goal);
+
+        verify(goalNotificationService).goalProgressChanged(
+                eq(1L),
+                isNull(),
+                eq("Buy Bike"),
+                any(String.class)
+        );
+    }
 }
+
+

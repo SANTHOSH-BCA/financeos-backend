@@ -2,7 +2,8 @@ package com.financeos.financeosbackend.goal.dto;
 
 import java.math.BigDecimal;
 
-public class GoalPerformanceResponse {
+public class
+GoalPerformanceResponse {
 
     private Long goalCount;
     private BigDecimal totalTargetAmount;

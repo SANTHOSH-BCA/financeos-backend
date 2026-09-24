@@ -8,6 +8,7 @@ import com.financeos.financeosbackend.liability.entity.Liability;
 import com.financeos.financeosbackend.liability.mapper.LiabilityMapper;
 import com.financeos.financeosbackend.liability.repository.LiabilityRepository;
 import com.financeos.financeosbackend.liability.validator.LiabilityValidator;
+import com.financeos.financeosbackend.notification.integration.liability.LiabilityNotificationService;
 import com.financeos.financeosbackend.user.entity.User;
 import org.springframework.stereotype.Service;
 
@@ -20,17 +21,20 @@ public class LiabilityService {
     private final CurrentUserService currentUserService;
     private final LiabilityMapper liabilityMapper;
     private final LiabilityValidator liabilityValidator;
+    private final LiabilityNotificationService liabilityNotificationService;
 
     public LiabilityService(
             LiabilityRepository liabilityRepository,
             CurrentUserService currentUserService,
             LiabilityMapper liabilityMapper,
-            LiabilityValidator liabilityValidator
+            LiabilityValidator liabilityValidator,
+            LiabilityNotificationService liabilityNotificationService
     ) {
         this.liabilityRepository = liabilityRepository;
         this.currentUserService = currentUserService;
         this.liabilityMapper = liabilityMapper;
         this.liabilityValidator = liabilityValidator;
+        this.liabilityNotificationService = liabilityNotificationService;
     }
 
     public LiabilityResponse createLiability(
@@ -46,6 +50,15 @@ public class LiabilityService {
 
         Liability savedLiability =
                 liabilityRepository.save(liability);
+
+        liabilityNotificationService.paymentDue(
+                user.getId(),
+                savedLiability.getId(),
+                savedLiability.getLiabilityName(),
+                "Your liability "
+                        + savedLiability.getLiabilityName()
+                        + " has been added."
+        );
 
         return liabilityMapper.toResponse(savedLiability);
     }

@@ -1,7 +1,9 @@
 package com.financeos.financeosbackend.notification.management;
 
+import com.financeos.financeosbackend.exception.ResourceNotFoundException;
+
 public class NotificationNotFoundException
-        extends RuntimeException {
+        extends ResourceNotFoundException {
 
     public NotificationNotFoundException(
             Long notificationId

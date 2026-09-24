@@ -1,34 +1,38 @@
 package com.financeos.financeosbackend.investment.service;
 
+import com.financeos.financeosbackend.common.service.CurrentUserService;
+import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 import com.financeos.financeosbackend.investment.dto.AddInvestmentRequest;
+import com.financeos.financeosbackend.investment.dto.InvestmentAllocationResponse;
+import com.financeos.financeosbackend.investment.dto.InvestmentExposureResponse;
+import com.financeos.financeosbackend.investment.dto.InvestmentHoldingPerformanceResponse;
+import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;
 import com.financeos.financeosbackend.investment.dto.InvestmentResponse;
+import com.financeos.financeosbackend.investment.dto.InvestmentValuationHistoryResponse;
 import com.financeos.financeosbackend.investment.entity.Investment;
 import com.financeos.financeosbackend.investment.repository.InvestmentRepository;
+import com.financeos.financeosbackend.investment.repository.InvestmentValuationHistoryRepository;
+import com.financeos.financeosbackend.networth.service.NetWorthService;
+import com.financeos.financeosbackend.notification.integration.investment.InvestmentNotificationService;
+import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
+import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
+import com.financeos.financeosbackend.transaction.enums.TransactionType;
 import com.financeos.financeosbackend.user.entity.User;
 import com.financeos.financeosbackend.user.repository.UserRepository;
-import com.financeos.financeosbackend.exception.ResourceNotFoundException;
 
-import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.time.LocalDate;
-import com.financeos.financeosbackend.common.service.CurrentUserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;import java.math.BigDecimal;
-import java.math.RoundingMode;import java.math.BigDecimal;
-import java.math.RoundingMode;import com.financeos.financeosbackend.investment.dto.InvestmentPerformanceResponse;import com.financeos.financeosbackend.investment.dto.InvestmentHoldingPerformanceResponse;
-import java.util.ArrayList;
-import java.math.RoundingMode;import com.financeos.financeosbackend.investment.dto.InvestmentAllocationResponse;
-import java.util.ArrayList;import com.financeos.financeosbackend.investment.dto.InvestmentValuationHistoryResponse;
-import com.financeos.financeosbackend.investment.entity.InvestmentValuationHistory;
-import com.financeos.financeosbackend.investment.repository.InvestmentValuationHistoryRepository;import com.financeos.financeosbackend.transaction.entity.FinancialTransaction;
-import com.financeos.financeosbackend.transaction.enums.TransactionStatus;
-import com.financeos.financeosbackend.transaction.enums.TransactionType;import com.financeos.financeosbackend.investment.dto.InvestmentExposureResponse;import java.util.HashMap;
-import java.util.Map;
-import java.math.RoundingMode;import com.financeos.financeosbackend.networth.service.NetWorthService;
+import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class InvestmentService {
@@ -41,18 +45,21 @@ public class InvestmentService {
     private final CurrentUserService currentUserService;
     private final InvestmentValuationHistoryRepository valuationHistoryRepository;
     private final NetWorthService netWorthService;
+    private final InvestmentNotificationService investmentNotificationService;
 
     public InvestmentService(InvestmentRepository investmentRepository,
                              UserRepository userRepository,
                              CurrentUserService currentUserService,
                              InvestmentValuationHistoryRepository valuationHistoryRepository,
-                             NetWorthService netWorthService) {
+                             NetWorthService netWorthService,
+                             InvestmentNotificationService investmentNotificationService) {
 
         this.investmentRepository = investmentRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.valuationHistoryRepository = valuationHistoryRepository;
         this.netWorthService = netWorthService;
+        this.investmentNotificationService = investmentNotificationService;
     }
 
     public InvestmentResponse addInvestment(AddInvestmentRequest request) {
@@ -63,9 +70,14 @@ public class InvestmentService {
 
         User user = currentUserService.getCurrentUser();
 
-        logger.info("Creating investment '{}' for user: {}", request.getInvestmentName(), user.getEmail());
+        logger.info(
+                "Creating investment '{}' for user: {}",
+                request.getInvestmentName(),
+                user.getEmail()
+        );
 
         Investment investment = new Investment();
+
         investment.setInvestmentName(request.getInvestmentName());
         investment.setInvestmentType(request.getInvestmentType());
         investment.setAmount(request.getAmount());
@@ -81,9 +93,22 @@ public class InvestmentService {
         investment.setInvestmentDate(request.getInvestmentDate());
         investment.setUser(user);
 
-        Investment savedInvestment = investmentRepository.save(investment);
+        Investment savedInvestment =
+                investmentRepository.save(investment);
 
-        logger.info("Investment created successfully with ID: {}", savedInvestment.getId());
+        logger.info(
+                "Investment created successfully with ID: {}",
+                savedInvestment.getId()
+        );
+
+        investmentNotificationService.investmentUpdated(
+                user.getId(),
+                savedInvestment.getId(),
+                savedInvestment.getInvestmentName(),
+                "Your investment "
+                        + savedInvestment.getInvestmentName()
+                        + " was added."
+        );
 
         return mapToResponse(savedInvestment);
     }
@@ -96,23 +121,46 @@ public class InvestmentService {
                 .map(this::mapToResponse);
     }
 
-    public InvestmentResponse updateInvestment(Long id, AddInvestmentRequest request) {
+    public InvestmentResponse updateInvestment(
+            Long id,
+            AddInvestmentRequest request) {
 
         User user = currentUserService.getCurrentUser();
 
-        logger.info("Updating investment with ID: {} for user: {}", id, user.getEmail());
+        logger.info(
+                "Updating investment with ID: {} for user: {}",
+                id,
+                user.getEmail()
+        );
 
-        Investment investment = investmentRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Investment not found"));
+        Investment investment =
+                investmentRepository.findByIdAndUser(id, user)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Investment not found"
+                                ));
 
         investment.setInvestmentName(request.getInvestmentName());
         investment.setInvestmentType(request.getInvestmentType());
         investment.setAmount(request.getAmount());
         investment.setInvestmentDate(request.getInvestmentDate());
 
-        Investment updatedInvestment = investmentRepository.save(investment);
+        Investment updatedInvestment =
+                investmentRepository.save(investment);
 
-        logger.info("Investment updated successfully with ID: {}", updatedInvestment.getId());
+        logger.info(
+                "Investment updated successfully with ID: {}",
+                updatedInvestment.getId()
+        );
+
+        investmentNotificationService.investmentUpdated(
+                user.getId(),
+                updatedInvestment.getId(),
+                updatedInvestment.getInvestmentName(),
+                "Your investment "
+                        + updatedInvestment.getInvestmentName()
+                        + " was updated."
+        );
 
         return mapToResponse(updatedInvestment);
     }
@@ -121,14 +169,25 @@ public class InvestmentService {
 
         User user = currentUserService.getCurrentUser();
 
-        logger.info("Deleting investment with ID: {} for user: {}", id, user.getEmail());
+        logger.info(
+                "Deleting investment with ID: {} for user: {}",
+                id,
+                user.getEmail()
+        );
 
-        Investment investment = investmentRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Investment not found"));
+        Investment investment =
+                investmentRepository.findByIdAndUser(id, user)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Investment not found"
+                                ));
 
         investmentRepository.delete(investment);
 
-        logger.info("Investment deleted successfully with ID: {}", id);
+        logger.info(
+                "Investment deleted successfully with ID: {}",
+                id
+        );
     }
 
     public InvestmentPerformanceResponse getPortfolioPerformance() {
@@ -150,8 +209,13 @@ public class InvestmentService {
         BigDecimal returnPercentage = BigDecimal.ZERO;
 
         if (totalInvestedAmount.compareTo(BigDecimal.ZERO) > 0) {
+
             returnPercentage = totalProfitLoss
-                    .divide(totalInvestedAmount, 6, RoundingMode.HALF_UP)
+                    .divide(
+                            totalInvestedAmount,
+                            6,
+                            RoundingMode.HALF_UP
+                    )
                     .multiply(BigDecimal.valueOf(100));
         }
 
@@ -169,8 +233,10 @@ public class InvestmentService {
         User user = currentUserService.getCurrentUser();
 
         List<Investment> investments =
-                investmentRepository.findByUser(user, Pageable.unpaged())
-                        .getContent();
+                investmentRepository.findByUser(
+                        user,
+                        Pageable.unpaged()
+                ).getContent();
 
         List<InvestmentHoldingPerformanceResponse> responses =
                 new ArrayList<>();
@@ -193,8 +259,13 @@ public class InvestmentService {
             BigDecimal returnPercentage = BigDecimal.ZERO;
 
             if (investedAmount.compareTo(BigDecimal.ZERO) > 0) {
+
                 returnPercentage = profitLoss
-                        .divide(investedAmount, 6, RoundingMode.HALF_UP)
+                        .divide(
+                                investedAmount,
+                                6,
+                                RoundingMode.HALF_UP
+                        )
                         .multiply(BigDecimal.valueOf(100));
             }
 
@@ -219,23 +290,33 @@ public class InvestmentService {
         User user = currentUserService.getCurrentUser();
 
         List<Object[]> distribution =
-                investmentRepository.getInvestmentDistributionByUser(user);
+                investmentRepository
+                        .getInvestmentDistributionByUser(user);
 
         BigDecimal totalInvested =
                 investmentRepository.getTotalInvestmentByUser(user);
 
-        List<InvestmentAllocationResponse> response = new ArrayList<>();
+        List<InvestmentAllocationResponse> response =
+                new ArrayList<>();
 
         for (Object[] row : distribution) {
 
             String investmentType = (String) row[0];
-            BigDecimal investedAmount = (BigDecimal) row[1];
 
-            BigDecimal allocationPercentage = BigDecimal.ZERO;
+            BigDecimal investedAmount =
+                    (BigDecimal) row[1];
+
+            BigDecimal allocationPercentage =
+                    BigDecimal.ZERO;
 
             if (totalInvested.compareTo(BigDecimal.ZERO) > 0) {
+
                 allocationPercentage = investedAmount
-                        .divide(totalInvested, 6, RoundingMode.HALF_UP)
+                        .divide(
+                                totalInvested,
+                                6,
+                                RoundingMode.HALF_UP
+                        )
                         .multiply(BigDecimal.valueOf(100));
             }
 
@@ -251,26 +332,37 @@ public class InvestmentService {
         return response;
     }
 
-    public List<InvestmentValuationHistoryResponse> getInvestmentHistory(Long investmentId) {
+    public List<InvestmentValuationHistoryResponse> getInvestmentHistory(
+            Long investmentId) {
 
         User user = currentUserService.getCurrentUser();
 
-        Investment investment = investmentRepository.findByIdAndUser(investmentId, user)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Investment not found"));
+        Investment investment =
+                investmentRepository.findByIdAndUser(
+                                investmentId,
+                                user
+                        )
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Investment not found"
+                                ));
 
         return valuationHistoryRepository
                 .findByInvestmentOrderByValuationDateDesc(investment)
                 .stream()
-                .map(history -> new InvestmentValuationHistoryResponse(
-                        history.getId(),
-                        investment.getId(),
-                        history.getInvestedAmount(),
-                        history.getCurrentValue(),
-                        history.getCurrentValue()
-                                .subtract(history.getInvestedAmount()),
-                        history.getValuationDate()
-                ))
+                .map(history ->
+                        new InvestmentValuationHistoryResponse(
+                                history.getId(),
+                                investment.getId(),
+                                history.getInvestedAmount(),
+                                history.getCurrentValue(),
+                                history.getCurrentValue()
+                                        .subtract(
+                                                history.getInvestedAmount()
+                                        ),
+                                history.getValuationDate()
+                        )
+                )
                 .toList();
     }
 
@@ -280,22 +372,27 @@ public class InvestmentService {
         User user = currentUserService.getCurrentUser();
 
         if (!transaction.getUser().getId().equals(user.getId())) {
-            throw new ResourceNotFoundException("Transaction not found");
+            throw new ResourceNotFoundException(
+                    "Transaction not found"
+            );
         }
 
         if (investmentRepository.findByTransaction(transaction).isPresent()) {
             throw new IllegalStateException(
-                    "Transaction has already been converted to an investment");
+                    "Transaction has already been converted to an investment"
+            );
         }
 
         if (transaction.getStatus() != TransactionStatus.CONFIRMED) {
             throw new IllegalStateException(
-                    "Only confirmed transactions can become investments");
+                    "Only confirmed transactions can become investments"
+            );
         }
 
         if (transaction.getType() != TransactionType.INVESTMENT) {
             throw new IllegalStateException(
-                    "Only investment transactions can become investments");
+                    "Only investment transactions can become investments"
+            );
         }
 
         Investment investment = new Investment();
@@ -315,17 +412,31 @@ public class InvestmentService {
         investment.setAmount(transaction.getAmount());
         investment.setTotalInvestedAmount(transaction.getAmount());
         investment.setCurrentValue(transaction.getAmount());
+
         investment.setInvestmentDate(
-                transaction.getTransactionDateTime().toLocalDate()
+                transaction.getTransactionDateTime()
+                        .toLocalDate()
         );
+
         investment.setValuationDate(
-                transaction.getTransactionDateTime().toLocalDate()
+                transaction.getTransactionDateTime()
+                        .toLocalDate()
         );
+
         investment.setUser(user);
         investment.setTransaction(transaction);
 
         Investment savedInvestment =
                 investmentRepository.save(investment);
+
+        investmentNotificationService.investmentUpdated(
+                user.getId(),
+                savedInvestment.getId(),
+                savedInvestment.getInvestmentName(),
+                "Your investment "
+                        + savedInvestment.getInvestmentName()
+                        + " was created from a transaction."
+        );
 
         return mapToResponse(savedInvestment);
     }
@@ -337,16 +448,19 @@ public class InvestmentService {
         List<Investment> investments =
                 investmentRepository.findByUser(
                         user,
-                        org.springframework.data.domain.Pageable.unpaged()
+                        Pageable.unpaged()
                 ).getContent();
 
-        Map<String, BigDecimal> exposureByType = new HashMap<>();
+        Map<String, BigDecimal> exposureByType =
+                new HashMap<>();
 
         for (Investment investment : investments) {
 
-            String investmentType = investment.getInvestmentType();
+            String investmentType =
+                    investment.getInvestmentType();
 
-            if (investmentType == null || investmentType.isBlank()) {
+            if (investmentType == null ||
+                    investmentType.isBlank()) {
                 continue;
             }
 
@@ -367,15 +481,22 @@ public class InvestmentService {
         BigDecimal totalCurrentValue =
                 exposureByType.values()
                         .stream()
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        .reduce(
+                                BigDecimal.ZERO,
+                                BigDecimal::add
+                        );
 
-        List<InvestmentExposureResponse> response = new ArrayList<>();
+        List<InvestmentExposureResponse> response =
+                new ArrayList<>();
 
-        for (Map.Entry<String, BigDecimal> entry : exposureByType.entrySet()) {
+        for (Map.Entry<String, BigDecimal> entry :
+                exposureByType.entrySet()) {
 
-            BigDecimal exposurePercentage = BigDecimal.ZERO;
+            BigDecimal exposurePercentage =
+                    BigDecimal.ZERO;
 
             if (totalCurrentValue.compareTo(BigDecimal.ZERO) > 0) {
+
                 exposurePercentage =
                         entry.getValue()
                                 .multiply(BigDecimal.valueOf(100))
@@ -423,14 +544,16 @@ public class InvestmentService {
 
     private void calculatePerformance(Investment investment) {
 
-        BigDecimal investedAmount = investment.getTotalInvestedAmount();
+        BigDecimal investedAmount =
+                investment.getTotalInvestedAmount();
 
         if (investedAmount == null) {
             investedAmount = investment.getAmount();
             investment.setTotalInvestedAmount(investedAmount);
         }
 
-        BigDecimal currentValue = investment.getCurrentValue();
+        BigDecimal currentValue =
+                investment.getCurrentValue();
 
         if (currentValue == null) {
             currentValue = investedAmount;
@@ -457,17 +580,21 @@ public class InvestmentService {
         }
     }
 
-    private InvestmentResponse mapToResponse(Investment investment) {
+    private InvestmentResponse mapToResponse(
+            Investment investment) {
 
-        InvestmentResponse response = new InvestmentResponse();
+        InvestmentResponse response =
+                new InvestmentResponse();
 
-        BigDecimal investedAmount = investment.getTotalInvestedAmount();
+        BigDecimal investedAmount =
+                investment.getTotalInvestedAmount();
 
         if (investedAmount == null) {
             investedAmount = investment.getAmount();
         }
 
-        BigDecimal currentValue = investment.getCurrentValue();
+        BigDecimal currentValue =
+                investment.getCurrentValue();
 
         if (currentValue == null) {
             currentValue = investedAmount;
@@ -476,24 +603,48 @@ public class InvestmentService {
         BigDecimal profitLoss =
                 currentValue.subtract(investedAmount);
 
-        BigDecimal returnPercentage = BigDecimal.ZERO;
+        BigDecimal returnPercentage =
+                BigDecimal.ZERO;
 
         if (investedAmount.compareTo(BigDecimal.ZERO) > 0) {
+
             returnPercentage = profitLoss
-                    .divide(investedAmount, 6, RoundingMode.HALF_UP)
+                    .divide(
+                            investedAmount,
+                            6,
+                            RoundingMode.HALF_UP
+                    )
                     .multiply(BigDecimal.valueOf(100));
         }
 
         response.setId(investment.getId());
-        response.setInvestmentName(investment.getInvestmentName());
-        response.setInvestmentType(investment.getInvestmentType());
-        response.setAmount(investment.getAmount());
-        response.setCurrentValue(currentValue);
-        response.setTotalInvestedAmount(investedAmount);
-        response.setProfitLoss(profitLoss);
-        response.setReturnPercentage(returnPercentage);
-        response.setInvestmentDate(investment.getInvestmentDate());
-        response.setValuationDate(investment.getValuationDate());
+        response.setInvestmentName(
+                investment.getInvestmentName()
+        );
+        response.setInvestmentType(
+                investment.getInvestmentType()
+        );
+        response.setAmount(
+                investment.getAmount()
+        );
+        response.setCurrentValue(
+                currentValue
+        );
+        response.setTotalInvestedAmount(
+                investedAmount
+        );
+        response.setProfitLoss(
+                profitLoss
+        );
+        response.setReturnPercentage(
+                returnPercentage
+        );
+        response.setInvestmentDate(
+                investment.getInvestmentDate()
+        );
+        response.setValuationDate(
+                investment.getValuationDate()
+        );
 
         response.setTransactionId(
                 investment.getTransaction() != null
