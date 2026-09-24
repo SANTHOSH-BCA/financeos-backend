@@ -1,0 +1,26 @@
+package com.financeos.financeosbackend.notification.enums;
+
+public enum NotificationType {
+
+    INVESTMENT_UPDATE,
+
+    DAILY_INVESTMENT_UPDATE,
+
+    GOAL_ALERT,
+
+    EXPENSE_ALERT,
+
+    TRANSACTION_ALERT,
+
+    HELP_RETURN_REMINDER,
+
+    INSURANCE_REMINDER,
+
+    FINANCIAL_HEALTH_ALERT,
+
+    MARKET_ALERT,
+
+    UPCOMING_FINANCIAL_EVENT,
+
+    DAILY_FINANCIAL_UPDATE
+}
