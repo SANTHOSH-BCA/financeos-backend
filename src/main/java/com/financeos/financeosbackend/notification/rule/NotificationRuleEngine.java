@@ -52,7 +52,8 @@ public class NotificationRuleEngine {
                  CASH_FLOW_ALERT,
                  FINANCIAL_HEALTH_CHANGED,
                  MARKET_ALERT,
-                 INSURANCE_EXPIRING ->
+                 INSURANCE_EXPIRING,
+                 INSURANCE_POLICY_EXPIRED ->
                     NotificationRuleResult.notifyWith(
                             NotificationPriority.IMPORTANT
                     );

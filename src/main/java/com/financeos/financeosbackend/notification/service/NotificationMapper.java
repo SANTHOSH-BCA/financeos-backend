@@ -51,7 +51,8 @@ public class NotificationMapper {
                     case MARKET_ALERT ->
                             com.financeos.financeosbackend.notification.enums.NotificationType.MARKET_ALERT;
 
-                    case INSURANCE_EXPIRING ->
+                    case INSURANCE_EXPIRING,
+                         INSURANCE_POLICY_EXPIRED ->
                             com.financeos.financeosbackend.notification.enums.NotificationType.INSURANCE_REMINDER;
 
                     case FINANCIAL_EVENT_UPCOMING ->

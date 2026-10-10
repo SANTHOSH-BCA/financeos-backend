@@ -18,6 +18,7 @@ public class OverallFinancialHealthService {
     private final FinancialHealthInvestmentService financialHealthInvestmentService;
     private final FinancialHealthGoalService financialHealthGoalService;
     private final FinancialHealthWealthService financialHealthWealthService;
+    private final FinancialHealthProtectionService financialHealthProtectionService;
 
     public OverallFinancialHealthService(
             FinancialHealthService financialHealthService,
@@ -25,7 +26,8 @@ public class OverallFinancialHealthService {
             FinancialHealthSavingsService financialHealthSavingsService,
             FinancialHealthInvestmentService financialHealthInvestmentService,
             FinancialHealthGoalService financialHealthGoalService,
-            FinancialHealthWealthService financialHealthWealthService
+            FinancialHealthWealthService financialHealthWealthService,
+            FinancialHealthProtectionService financialHealthProtectionService
     ) {
         this.financialHealthService = financialHealthService;
         this.financialHealthDebtService = financialHealthDebtService;
@@ -33,6 +35,7 @@ public class OverallFinancialHealthService {
         this.financialHealthInvestmentService = financialHealthInvestmentService;
         this.financialHealthGoalService = financialHealthGoalService;
         this.financialHealthWealthService = financialHealthWealthService;
+        this.financialHealthProtectionService = financialHealthProtectionService;
     }
 
     public OverallFinancialHealthResponse calculateOverallFinancialHealth() {
@@ -103,4 +106,8 @@ public class OverallFinancialHealthService {
 
         return "STABLE";
     }
-}
+
+    public com.financeos.financeosbackend.financialhealth.dto.response.FinancialHealthProtectionResponse
+    calculateProtectionHealthIndicator() {
+        return financialHealthProtectionService.calculateProtectionHealth();
+    }}

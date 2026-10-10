@@ -63,6 +63,13 @@ public class ProtectionContextService {
         return toResponse(context);
     }
 
+    public java.util.Optional<ProtectionContextResponse> findCurrentUserContext() {
+        return financialProfileRepository.findByUser(
+                        currentUserService.getCurrentUser()
+                )
+                .flatMap(contextRepository::findByFinancialProfile)
+                .map(this::toResponse);
+    }
     private ProtectionContextResponse toResponse(
             ProtectionContext context
     ) {

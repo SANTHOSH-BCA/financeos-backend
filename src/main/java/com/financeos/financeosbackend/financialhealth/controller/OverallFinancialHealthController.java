@@ -3,6 +3,7 @@ package com.financeos.financeosbackend.financialhealth.controller;
 import com.financeos.financeosbackend.common.dto.ApiResponse;
 import com.financeos.financeosbackend.common.util.ResponseBuilder;
 import com.financeos.financeosbackend.financialhealth.dto.OverallFinancialHealthResponse;
+import com.financeos.financeosbackend.financialhealth.dto.response.FinancialHealthProtectionResponse;
 import com.financeos.financeosbackend.financialhealth.service.OverallFinancialHealthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,4 +33,15 @@ public class OverallFinancialHealthController {
                 response
         );
     }
-}
+
+    @GetMapping("/protection")
+    public ResponseEntity<ApiResponse<FinancialHealthProtectionResponse>> getProtectionHealth() {
+
+        FinancialHealthProtectionResponse response =
+                overallFinancialHealthService.calculateProtectionHealthIndicator();
+
+        return ResponseBuilder.success(
+                "Financial protection health retrieved successfully",
+                response
+        );
+    }}
