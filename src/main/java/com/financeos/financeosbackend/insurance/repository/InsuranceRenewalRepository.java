@@ -13,4 +13,6 @@ public interface InsuranceRenewalRepository
             Long policyId,
             Long userId
     );
+
+    boolean existsByInsurancePolicy_Id(Long policyId);
 }

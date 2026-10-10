@@ -127,6 +127,13 @@ public class InsurancePolicyService {
 
         InsurancePolicy policy = getPolicyForCurrentUser(id);
 
+        if (insuranceRenewalRepository.existsByInsurancePolicy_Id(id)) {
+            throw new IllegalStateException(
+                    "Cannot delete an insurance policy with renewal history. " +
+                            "Preserve the policy and its financial records."
+            );
+        }
+
         insurancePolicyRepository.delete(policy);
     }
 

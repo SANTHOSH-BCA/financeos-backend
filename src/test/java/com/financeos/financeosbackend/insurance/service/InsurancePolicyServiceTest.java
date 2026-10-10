@@ -233,6 +233,29 @@ class InsurancePolicyServiceTest {
     }
 
     @Test
+    void deletePolicy_WhenPolicyHasRenewalHistory_ShouldThrowException() {
+        User user = createUser();
+        InsurancePolicy policy = createPolicy(user);
+
+        when(currentUserService.getCurrentUser()).thenReturn(user);
+
+        when(insurancePolicyRepository.findByIdAndUser_Id(1L, 1L))
+                .thenReturn(Optional.of(policy));
+
+        when(insuranceRenewalRepository.existsByInsurancePolicy_Id(1L))
+                .thenReturn(true);
+
+        IllegalStateException exception = assertThrows(
+                IllegalStateException.class,
+                () -> insurancePolicyService.deletePolicy(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("renewal history"));
+
+        verify(insurancePolicyRepository, never()).delete(any());
+    }
+
+    @Test
     void getOverduePremiums_ShouldReturnPoliciesDueBeforeToday() {
         User user = createUser();
         InsurancePolicy policy = createPolicy(user);
